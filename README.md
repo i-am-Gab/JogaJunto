@@ -1,4 +1,100 @@
 # JogaJunto
 Sistema web para criação, divulgação e gerenciamento de atividades físicas coletivas. Permite cadastrar modalidades, definir data, horário, local, limite de participantes, valor e tipo de inscrição. Usuários podem visualizar atividades, solicitar participação e acompanhar o status de suas inscrições.
 
-<iframe src="https://mermaid.live/embed?theme=default&look=classic&mode=light#pako:eNqtVttuozAQ_RXk5_QH8ha12VW0bVq1dKWukJBjDzBbX1jbdNum_fc1UJK4mKiRFgkJfI7HM2cusCVMcyBzAuYCaWmozEym2jvx1_3d8jZ5ezs709tkcZ6ufq7Sh2SeaFNSha9gY7zb5ffVXXq7SFfXa8-V9LHnDdyr64vFZWtnbJcJai0WuDd8eX3eGxqTK21dYHiHxR0xwACfQl8CSrftLblZPFwt16nfUYICQ93emxh9kabL9cVifb7sz9CG25GE2-GtvTZYonIJ8uTmx-H6EzWsoiZpLBhFJcQwkBRFch_dV3vx_vrjY1iBxrp8yqqXfRqsK62igNEiWN9ov0BVgjanzHmpJ0DraFEcYtxr7FBC95D_1qhgF8R7tHRO0rMN7JNkDp5dwsEyg7VDrb4URuDKrjBPdiW2bp0BcNEdjdyAiSKAZbXRptI6mnKG7iV-llc5BrxinbfDIGpMy1qABBV10kABBhSDvPbJc1HBdt35JcE-1odBY3LP-BZjSM2p8JFOEoRmtE3xmDB479CFhXysOna16mU0zpeIi6Kg-Ges85Y-57XfhwxrqpwN9gJDSUVSG2QQNcq08n0s-3A4UC5wojOhRF9SPdG91DBVB42NH2TAP_Kp4Jqaf4LfJ4fqKdnu2u1YLg-km07nkbgM_GnAHomszQGfhj8ScIRAfRMIMSJ0FbUvZqUPPiqBdsPH5xTZgmx3sszCaTdUFpW6iTfwWLMBkeCqcL7sgq0pTgsxqqBwGOw_mv810mF2U-d8B0Lcb1YBe8xRxXIUZobMSGmQk7kzDcyIBN987SvZZsRVfhxmZJ4RDgVthMvILCNC68dusf-VYRlpjfiC_aW1HOwY3ZQVmRdUWP_Wd9PHz1dPef8HQDIJCg" width="100%" height="480" style="border:0" loading="lazy" title="Mermaid diagram" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
+<script src="https://mermaid.live/embed.js" async></script>
+<mermaid-embed src="https://mermaid.live/embed?theme=default&look=classic&mode=light" height="480">
+erDiagram
+
+    USER ||--o{ ACTIVITY : organizes
+    USER ||--o{ REGISTRATION : makes
+
+    MODALITY ||--o{ ACTIVITY : classifies
+    LOCATION ||--o{ ACTIVITY : hosts
+
+    ACTIVITY ||--o{ REGISTRATION : receives
+
+    REGISTRATION ||--o| PAYMENT : generates
+    REGISTRATION ||--o| ATTENDANCE : records
+
+    USER {
+        bigint id PK
+        varchar username
+        varchar email UK
+        varchar password
+        varchar first_name
+        varchar last_name
+        varchar phone
+        varchar role
+        boolean is_active
+        boolean is_staff
+        datetime date_joined
+    }
+
+    MODALITY {
+        bigint id PK
+        varchar name UK
+        text description
+        boolean is_active
+    }
+
+    LOCATION {
+        bigint id PK
+        varchar name
+        varchar street
+        varchar number
+        varchar neighborhood
+        varchar city
+        varchar state
+        varchar zip_code
+        varchar complement
+        varchar reference_point
+    }
+
+    ACTIVITY {
+        bigint id PK
+        bigint organizer_id FK
+        bigint modality_id FK
+        bigint location_id FK
+        varchar title
+        text description
+        datetime starts_at
+        datetime ends_at
+        int max_participants
+        decimal price
+        datetime confirmation_deadline
+        varchar registration_type
+        varchar status
+        datetime created_at
+        datetime updated_at
+    }
+
+    REGISTRATION {
+        bigint id PK
+        bigint activity_id FK
+        bigint participant_id FK
+        varchar status
+        datetime requested_at
+        datetime decided_at
+        datetime confirmed_at
+        datetime cancelled_at
+        text organizer_notes
+    }
+
+    PAYMENT {
+        bigint id PK
+        bigint registration_id FK,UK
+        decimal amount
+        varchar status
+        varchar method
+        datetime paid_at
+        datetime created_at
+    }
+
+    ATTENDANCE {
+        bigint id PK
+        bigint registration_id FK,UK
+        boolean attended
+        datetime check_in_at
+        text notes
+    }
+</mermaid-embed>
