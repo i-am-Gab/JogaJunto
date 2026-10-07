@@ -4,15 +4,11 @@ Aplicação web desenvolvida com **Django** para criação, divulgação e geren
 
 O sistema permite que organizadores cadastrem atividades e controlem inscrições, enquanto participantes podem consultar atividades disponíveis, solicitar participação e acompanhar o status de suas inscrições.
 
----
-
 ## 👥 Integrantes
 
 - **Gabriel Aguiar Alves e Silva**
 - **Ronan Gustavo Carleto**
 - **Marco Antonio Maia**
-
-## 🛠️ Tecnologias Utilizadas
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -94,8 +90,6 @@ Quando necessário, o sistema também permitirá o registro de pagamentos e o co
 - Data e horário de check-in;
 - Observações relacionadas à participação.
 
----
-
 ## 🗃️ Modelagem do Banco de Dados
 
 O sistema utiliza um banco de dados relacional composto pelas seguintes entidades principais:
@@ -119,8 +113,6 @@ Os principais relacionamentos são:
 - uma inscrição pode possuir um registro de presença.
 
 📊 **Visualizar o Diagrama Entidade-Relacionamento**
-
----
 
 ## 🧩 Organização dos Apps Django
 
@@ -165,8 +157,6 @@ Registration
 Payment
 Attendance
 ```
-
----
 
 ## 📁 Estrutura do Projeto
 
@@ -224,8 +214,6 @@ A estrutura prevista para o projeto é:
 
 A estrutura poderá sofrer alterações durante o desenvolvimento da aplicação.
 
----
-
 ## 🔐 Ambiente Administrativo
 
 O projeto possui um ambiente administrativo protegido por autenticação.
@@ -245,8 +233,6 @@ O Django Admin será personalizado com um tema administrativo e terá recursos c
 - gerenciamento de inscrições;
 - gerenciamento de pagamentos;
 - gerenciamento de presença.
-
----
 
 ## 🌿 Organização do Repositório
 
@@ -286,8 +272,6 @@ A branch `main` deverá conter versões estáveis do projeto.
 A branch `develop` será utilizada para integração das funcionalidades em desenvolvimento.
 
 As branches `feature/*` serão utilizadas para implementação isolada de funcionalidades.
-
----
 
 ## 🚀 Instalação
 
@@ -361,8 +345,6 @@ O ambiente administrativo estará disponível em:
 http://127.0.0.1:8000/admin/
 ```
 
----
-
 ## 🧪 Estado Atual do Desenvolvimento
 
 ### Checkpoint 1
@@ -392,8 +374,6 @@ http://127.0.0.1:8000/admin/
 - [ ]  Tema escuro;
 - [ ]  Integração completa com o banco de dados;
 - [ ]  Finalização da documentação.
-
----
 
 ## 📋 Regras de Negócio
 
