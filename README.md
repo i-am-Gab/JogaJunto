@@ -112,7 +112,7 @@ Os principais relacionamentos são:
 - uma inscrição pode possuir um pagamento;
 - uma inscrição pode possuir um registro de presença.
 
-📊 **Visualizar o Diagrama Entidade-Relacionamento**
+📊 [Visualizar o Diagrama Entidade-Relacionamento](docs/der.md)
 
 ## 🧩 Organização dos Apps Django
 
