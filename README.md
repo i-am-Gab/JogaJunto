@@ -14,66 +14,23 @@ O sistema permite que organizadores cadastrem atividades e controlem inscriçõe
 
 ## 🛠️ Tecnologias Utilizadas
 
+## 🛠️ Tecnologias Utilizadas
+
 <p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg"
-       alt="Python"
-       title="Python"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/django/django-plain.svg"
-       alt="Django"
-       title="Django"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg"
-       alt="HTML5"
-       title="HTML5"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg"
-       alt="CSS3"
-       title="CSS3"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg"
-       alt="JavaScript"
-       title="JavaScript"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg"
-       alt="Bootstrap"
-       title="Bootstrap"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sqlite/sqlite-original.svg"
-       alt="SQLite"
-       title="SQLite"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg"
-       alt="Git"
-       title="Git"
-       width="50"
-       height="50" />
-
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg"
-       alt="GitHub"
-       title="GitHub"
-       width="50"
-       height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" alt="Python" title="Python" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/django/django-plain.svg" alt="Django" title="Django" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" alt="HTML5" title="HTML5" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" alt="CSS3" title="CSS3" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" alt="JavaScript" title="JavaScript" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg" alt="Bootstrap" title="Bootstrap" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sqlite/sqlite-original.svg" alt="SQLite" title="SQLite" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" alt="Git" title="Git" width="50" height="50" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" alt="GitHub" title="GitHub" width="50" height="50" />
 </p>
 
 <p align="center">
-  Python • Django • HTML5 • CSS3 • JavaScript • Bootstrap • SQLite • Git • GitHub
+  <strong>Python • Django • HTML5 • CSS3 • JavaScript • Bootstrap • SQLite • Git • GitHub</strong>
 </p>
----
 
 ## 📌 Sobre o Projeto
 
@@ -93,8 +50,6 @@ Cada atividade poderá possuir informações como:
 As inscrições poderão ocorrer de forma **automática** ou **mediante aprovação do organizador**.
 
 Quando necessário, o sistema também permitirá o registro de pagamentos e o controle de presença dos participantes.
-
----
 
 ## ⚙️ Principais Funcionalidades
 
