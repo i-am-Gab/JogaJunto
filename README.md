@@ -12,9 +12,6 @@ O sistema permite que organizadores cadastrem atividades e controlem inscriçõe
 - **Ronan Gustavo Carleto**
 - **Marco Antonio Maia**
 
----
-## 🛠️ Tecnologias Utilizadas
-
 ## 🛠️ Tecnologias Utilizadas
 
 <p align="center">
@@ -271,8 +268,6 @@ A estrutura prevista para o projeto é:
 ```
 
 A estrutura poderá sofrer alterações durante o desenvolvimento da aplicação.
-
----
 
 ---
 
