@@ -33,35 +33,40 @@
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg border-bottom sticky-top bg-body-tertiary">
-        <div class="container">
-            <a class="navbar-brand text-primary" href="{% url 'home' %}">
-                <i class="fa-solid fa-people-group me-2"></i>JogaJunto
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'home' %}">Atividades</a>
-                    </li>
-                </ul>
-                <div class="d-flex align-items-center gap-2">
-                    <!-- Botão de Troca de Tema -->
-                    <button class="btn btn-outline-secondary btn-sm" id="themeToggle" type="button">
-                        <i class="fa-solid fa-moon" id="themeIcon"></i>
-                    </button>
+    <div class="d-flex align-items-center gap-2">
+        <!-- Botão de Troca de Tema -->
+        <button class="btn btn-outline-secondary btn-sm" id="themeToggle" type="button">
+            <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
 
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'admin:index' %}" class="btn btn-outline-primary btn-sm">Painel Admin</a>
-                    <span class="navbar-text ms-2">Olá, <strong>{{ user.username }}</strong></span>
-                    {% else %}
-                    <a href="{% url 'admin:login' %}" class="btn btn-primary btn-sm">Entrar</a>
-                    {% endif %}
-                </div>
-            </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'create_activity' %}" class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nova
+            Atividade</a>
+
+        <div class="dropdown">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Olá, <strong>{{ user.first_name|default:user.username }}</strong>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Painel Admin</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <!-- Django 5 exige POST para fazer logout por segurança -->
+                    <form action="{% url 'logout' %}?next=/" method="post" class="m-0 p-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item text-danger">Sair</button>
+                    </form>
+                </li>
+            </ul>
         </div>
+        {% else %}
+        <a href="{% url 'admin:login' %}?next=/" class="btn btn-primary btn-sm">Entrar</a>
+        {% endif %}
+    </div>
+    </div>
+    </div>
     </nav>
 
     <!-- Conteúdo Dinâmico -->

@@ -1,25 +1,17 @@
-"""
-URL configuration for config project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-
 from django.contrib import admin
-from django.urls import path
-from activities.views import home
+from django.urls import path, include
+from activities.views import home, subscribe_activity, create_activity
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path(
+        "contas/", include("django.contrib.auth.urls")
+    ),  # Habilita a rota /contas/logout/
     path("", home, name="home"),
+    path("atividade/nova/", create_activity, name="create_activity"),
+    path(
+        "atividade/<int:activity_id>/inscrever/",
+        subscribe_activity,
+        name="subscribe_activity",
+    ),
 ]

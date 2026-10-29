@@ -27,6 +27,12 @@ class Location(models.Model):
     reference_point = models.CharField(
         "Ponto de Referência", max_length=150, blank=True, null=True
     )
+    latitude = models.DecimalField(
+        "Latitude", max_digits=11, decimal_places=8, blank=True, null=True
+    )
+    longitude = models.DecimalField(
+        "Longitude", max_digits=11, decimal_places=8, blank=True, null=True
+    )
 
     class Meta:
         verbose_name = "Local"

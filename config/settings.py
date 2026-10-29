@@ -44,35 +44,6 @@ INSTALLED_APPS = [
     "registrations",
 ]
 
-JAZZMIN_SETTINGS = {
-    "site_title": "JogaJunto Admin",
-    "site_header": "JogaJunto",
-    "site_brand": "JogaJunto",
-    "welcome_sign": "Bem-vindo ao Painel do JogaJunto",
-    "copyright": "JogaJunto - UFLA",
-    "search_model": ["accounts.User", "activities.Activity"],
-    "topmenu_links": [
-        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Ver Site", "url": "/"},
-    ],
-    "show_sidebar": True,
-    "navigation_expanded": True,
-    "icons": {
-        "accounts.user": "fas fa-users",
-        "activities.activity": "fas fa-running",
-        "activities.modality": "fas fa-football-ball",
-        "activities.location": "fas fa-map-marker-alt",
-        "registrations.registration": "fas fa-clipboard-list",
-        "registrations.payment": "fas fa-dollar-sign",
-        "registrations.attendance": "fas fa-user-check",
-    },
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "theme": "flatly",  # Tema Bootstrap moderno
-    "dark_mode_theme": "darkly",
-}
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -163,3 +134,32 @@ MAILERS = {
 }
 
 AUTH_USER_MODEL = "accounts.User"
+
+JAZZMIN_SETTINGS = {
+    "site_title": "JogaJunto Admin",
+    "site_header": "JogaJunto",
+    "site_brand": "JogaJunto",
+    "welcome_sign": "Bem-vindo ao Painel do JogaJunto",
+    "copyright": "JogaJunto - UFLA",
+    "search_model": ["accounts.User", "activities.Activity"],
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Ver Site", "url": "/"},
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "icons": {
+        "accounts.user": "fas fa-users",
+        "activities.activity": "fas fa-running",
+        "activities.modality": "fas fa-football-ball",
+        "activities.location": "fas fa-map-marker-alt",
+        "registrations.registration": "fas fa-clipboard-list",
+        "registrations.payment": "fas fa-dollar-sign",
+        "registrations.attendance": "fas fa-user-check",
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "flatly",  # Tema Bootstrap moderno
+    "dark_mode_theme": "darkly",
+}
