@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Início — JogaJunto{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold">Encontre sua próxima atividade</h1>
+        <p class="text-secondary">Explore grupos de corrida, futebol, pedal e muito mais na sua região.</p>
+    </div>
+</div>
+
+<!-- Grid de Cards de Atividades -->
+<div class="row g-4">
+    {% for activity in activities %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 bg-body-tertiary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7">
+                        {{ activity.modality.name }}
+                    </span>
+                    <span class="fw-bold text-success">
+                        {% if activity.price == 0 %}Gratuito{% else %}R$ {{ activity.price }}{% endif %}
+                    </span>
+                </div>
+                <h5 class="card-title fw-bold mt-2">{{ activity.title }}</h5>
+                <p class="card-text text-secondary small">{{ activity.description|truncatewords:15 }}</p>
+                <hr class="my-2 opacity-25">
+                <div class="small text-secondary">
+                    <div><i class="fa-regular fa-calendar me-2"></i>{{ activity.starts_at|date:"d/m/Y H:i" }}</div>
+                    <div><i class="fa-solid fa-location-dot me-2"></i>{{ activity.location.name }} ({{
+                        activity.location.city }})</div>
+                    <div><i class="fa-solid fa-users me-2"></i>Até {{ activity.max_participants }} vagas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <i class="fa-solid fa-calendar-xmark fs-1 text-secondary mb-3"></i>
+        <h4 class="h5 fw-bold">Nenhuma atividade cadastrada ainda</h4>
+        <p class="text-secondary">Cadastre modalidades, locais e atividades no painel administrativo para visualizar o
+            feed.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
