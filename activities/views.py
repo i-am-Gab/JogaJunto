@@ -2,9 +2,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
-from .models import Activity
+
+from accounts.permissions import promote_to_organizer
 from registrations.models import Registration
+
 from .forms import ActivityForm
+from .models import Activity
 
 
 def home(request):
@@ -43,6 +46,7 @@ def create_activity(request):
             activity.organizer = request.user
             activity.status = "PUBLISHED"  # Publica direto para facilitar o fluxo
             activity.save()
+            promote_to_organizer(request.user)
             messages.success(request, "Atividade criada com sucesso!")
             return redirect("home")
     else:
