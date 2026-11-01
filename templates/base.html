@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JogaJunto{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div class="d-flex align-items-center gap-2">
+        <!-- Botão de Troca de Tema -->
+        <button class="btn btn-outline-secondary btn-sm" id="themeToggle" type="button">
+            <i class="fa-solid fa-moon" id="themeIcon"></i>
+        </button>
+
+        {% if user.is_authenticated %}
+        <a href="{% url 'create_activity' %}" class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nova
+            Atividade</a>
+
+        <div class="dropdown">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Olá, <strong>{{ user.first_name|default:user.username }}</strong>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Painel Admin</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <!-- Django 5 exige POST para fazer logout por segurança -->
+                    <form action="{% url 'logout' %}?next=/" method="post" class="m-0 p-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item text-danger">Sair</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+        {% else %}
+        <a href="{% url 'admin:login' %}?next=/" class="btn btn-primary btn-sm">Entrar</a>
+        {% endif %}
+    </div>
+    </div>
+    </div>
+    </nav>
+
+    <!-- Conteúdo Dinâmico -->
+    <main class="py-4">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-3 border-top bg-body-tertiary text-center text-muted fs-7">
+        <div class="container">
+            <p class="mb-0">&copy; 2026 JogaJunto — Disciplina GAC116 (UFLA)</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script do Tema Claro/Escuro -->
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        // Recupera o tema salvo ou usa 'light'
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        htmlElement.setAttribute('data-bs-theme', currentTheme);
+        updateIcon(currentTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = htmlElement.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        });
+
+        function updateIcon(theme) {
+            if (theme === 'dark') {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>
