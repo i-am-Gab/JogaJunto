@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "accounts.apps.AccountsConfig",
-    "activities",
-    "registrations",
+    "activities.apps.ActivitiesConfig",
+    "registrations.apps.RegistrationsConfig",
 ]
 
 MIDDLEWARE = [
@@ -143,16 +143,21 @@ JAZZMIN_SETTINGS = {
     "copyright": "JogaJunto - UFLA",
     "search_model": ["accounts.User", "activities.Activity"],
     "topmenu_links": [
-        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Início", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Ver Site", "url": "/"},
     ],
     "show_sidebar": True,
     "navigation_expanded": True,
+    "hide_apps": ["auth"],
+    "order_with_respect_to": ["activities", "registrations", "accounts"],
     "icons": {
+        "accounts": "fas fa-user-circle",
         "accounts.user": "fas fa-users",
+        "activities": "fas fa-running",
         "activities.activity": "fas fa-running",
         "activities.modality": "fas fa-football-ball",
         "activities.location": "fas fa-map-marker-alt",
+        "registrations": "fas fa-clipboard-list",
         "registrations.registration": "fas fa-clipboard-list",
         "registrations.payment": "fas fa-dollar-sign",
         "registrations.attendance": "fas fa-user-check",
