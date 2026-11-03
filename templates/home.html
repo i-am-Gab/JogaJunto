@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Início — JogaJunto{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h1 class="h3 fw-bold">Encontre sua próxima atividade</h1>
+        <p class="text-secondary">Explore grupos de corrida, futebol, pedal e muito mais na sua região.</p>
+    </div>
+</div>
+
+<!-- Sistema de Alertas do Django -->
+{% if messages %}
+<div class="row mb-3">
+    <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Grid de Cards de Atividades -->
+<div class="row g-4">
+    {% for activity in activities %}
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 bg-body-tertiary">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7">
+                        {{ activity.modality.name }}
+                    </span>
+                    <span class="fw-bold text-success">
+                        {% if activity.price == 0 %}Gratuito{% else %}R$ {{ activity.price }}{% endif %}
+                    </span>
+                </div>
+                <h5 class="card-title fw-bold mt-2">{{ activity.title }}</h5>
+                <p class="card-text text-secondary small mb-3">{{ activity.description|truncatewords:15 }}</p>
+
+                <div class="small text-secondary mb-3 mt-auto">
+                    <div><i class="fa-regular fa-calendar me-2"></i>{{ activity.starts_at|date:"d/m/Y H:i" }}</div>
+                    <div><i class="fa-solid fa-location-dot me-2"></i>{{ activity.location.name }} ({{
+                        activity.location.city }})</div>
+                    <div class="mb-1">
+                        <i class="fa-solid fa-users me-2"></i>
+                        <span
+                            class="fw-bold {% if activity.active_registrations >= activity.max_participants %}text-danger{% endif %}">
+                            {{ activity.active_registrations }} / {{ activity.max_participants }} vagas preenchidas
+                        </span>
+                    </div>
+                    <div class="text-muted mt-1 fst-italic">Organizado por: {{
+                        activity.organizer.first_name|default:activity.organizer.username }}</div>
+                </div>
+
+                <hr class="my-2 opacity-25">
+
+                <!-- Lógica do Botão -->
+                <div class="mt-2 text-center">
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'admin:login' %}?next=/" class="btn btn-outline-primary btn-sm w-100">Faça login
+                        para participar</a>
+                    {% elif user == activity.organizer %}
+                    <button class="btn btn-secondary btn-sm w-100" disabled>Sua Atividade</button>
+                    {% elif activity.id in user_registrations %}
+                    <button class="btn btn-success btn-sm w-100" disabled><i class="fa-solid fa-check me-1"></i>
+                        Inscrito</button>
+                    {% else %}
+                    <form action="{% url 'subscribe_activity' activity.id %}" method="POST" class="d-inline w-100">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Participar</button>
+                    </form>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <i class="fa-solid fa-calendar-xmark fs-1 text-secondary mb-3"></i>
+        <h4 class="h5 fw-bold">Nenhuma atividade cadastrada ainda</h4>
+        <p class="text-secondary">Cadastre modalidades, locais e atividades no painel administrativo para visualizar o
+            feed.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
