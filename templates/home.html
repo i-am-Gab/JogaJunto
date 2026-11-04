@@ -3,20 +3,48 @@
 {% block title %}Início — JogaJunto{% endblock %}
 
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h1 class="h3 fw-bold">Encontre sua próxima atividade</h1>
-        <p class="text-secondary">Explore grupos de corrida, futebol, pedal e muito mais na sua região.</p>
+<!-- Estilos personalizados rápidos para dar um ar moderno -->
+<style>
+    .hero-banner {
+        background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+        color: white;
+    }
+
+    .card-atividade {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-top: 4px solid #0d6efd !important;
+    }
+
+    .card-atividade:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+
+    .badge-modalidade {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+</style>
+
+<!-- Hero Banner -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="p-5 rounded-4 shadow-sm hero-banner text-center text-md-start">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="fa-solid fa-person-running me-3 opacity-75"></i>Encontre sua próxima atividade
+            </h1>
+            <p class="fs-5 opacity-75 mb-0">Explore grupos de corrida, futebol, pedal e muito mais na sua região.</p>
+        </div>
     </div>
 </div>
 
 <!-- Sistema de Alertas do Django -->
 {% if messages %}
-<div class="row mb-3">
+<div class="row mb-4">
     <div class="col-12">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-            {{ message }}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0" role="alert">
+            <i class="fa-solid fa-circle-info me-2"></i> {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
@@ -27,51 +55,84 @@
 <!-- Grid de Cards de Atividades -->
 <div class="row g-4">
     {% for activity in activities %}
-    <div class="col-md-4">
-        <div class="card h-100 shadow-sm border-0 bg-body-tertiary">
-            <div class="card-body d-flex flex-column">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-7">
-                        {{ activity.modality.name }}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm border-0 bg-body-tertiary card-atividade">
+            <div class="card-body d-flex flex-column p-4">
+
+                <!-- Cabeçalho do Card (Modalidade e Preço) -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span
+                        class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill badge-modalidade">
+                        <i class="fa-solid fa-tag me-1"></i> {{ activity.modality.name }}
                     </span>
-                    <span class="fw-bold text-success">
-                        {% if activity.price == 0 %}Gratuito{% else %}R$ {{ activity.price }}{% endif %}
+                    <span class="fw-bold fs-5 text-success">
+                        {% if activity.price == 0 %}
+                        <i class="fa-solid fa-leaf me-1"></i> Grátis
+                        {% else %}
+                        R$ {{ activity.price }}
+                        {% endif %}
                     </span>
                 </div>
-                <h5 class="card-title fw-bold mt-2">{{ activity.title }}</h5>
-                <p class="card-text text-secondary small mb-3">{{ activity.description|truncatewords:15 }}</p>
 
-                <div class="small text-secondary mb-3 mt-auto">
-                    <div><i class="fa-regular fa-calendar me-2"></i>{{ activity.starts_at|date:"d/m/Y H:i" }}</div>
-                    <div><i class="fa-solid fa-location-dot me-2"></i>{{ activity.location.name }} ({{
-                        activity.location.city }})</div>
-                    <div class="mb-1">
-                        <i class="fa-solid fa-users me-2"></i>
-                        <span
-                            class="fw-bold {% if activity.active_registrations >= activity.max_participants %}text-danger{% endif %}">
-                            {{ activity.active_registrations }} / {{ activity.max_participants }} vagas preenchidas
+                <!-- Título e Descrição -->
+                <h4 class="card-title fw-bold mb-2">{{ activity.title }}</h4>
+                <p class="card-text text-secondary mb-4">{{ activity.description|truncatewords:15 }}</p>
+
+                <!-- Informações Detalhadas (Ícones) -->
+                <div class="mt-auto bg-body rounded-3 p-3 mb-3 border">
+                    <div class="d-flex align-items-center mb-2 text-secondary small">
+                        <i class="fa-regular fa-calendar text-primary me-2 fs-6"></i>
+                        <span>{{ activity.starts_at|date:"d/m/Y \à\s H:i" }}</span>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-2 text-secondary small">
+                        <i class="fa-solid fa-location-dot text-danger me-2 fs-6"></i>
+                        <span>
+                            {{ activity.location.name }}
+                            {% if activity.location.city %} ({{ activity.location.city }}) {% endif %}
                         </span>
                     </div>
-                    <div class="text-muted mt-1 fst-italic">Organizado por: {{
-                        activity.organizer.first_name|default:activity.organizer.username }}</div>
+
+                    <div class="d-flex align-items-center text-secondary small">
+                        <i class="fa-solid fa-users text-warning me-2 fs-6"></i>
+                        <span
+                            class="{% if activity.active_registrations >= activity.max_participants %}text-danger fw-bold{% endif %}">
+                            {{ activity.active_registrations }} de {{ activity.max_participants }} vagas
+                        </span>
+                    </div>
                 </div>
 
-                <hr class="my-2 opacity-25">
+                <!-- Organizador -->
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-secondary-subtle rounded-circle d-flex justify-content-center align-items-center me-2"
+                        style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-user text-secondary"></i>
+                    </div>
+                    <span class="small text-muted fw-medium">
+                        Por
+                        {% if activity.organizer.first_name %}
+                        {{ activity.organizer.first_name }}
+                        {% else %}
+                        @{{ activity.organizer.username }}
+                        {% endif %}
+                    </span>
+                </div>
 
-                <!-- Lógica do Botão -->
-                <div class="mt-2 text-center">
+                <!-- Ações do Botão -->
+                <div class="mt-2">
                     {% if not user.is_authenticated %}
-                    <a href="{% url 'admin:login' %}?next=/" class="btn btn-outline-primary btn-sm w-100">Faça login
-                        para participar</a>
+                    <a href="{% url 'login' %}?next=/" class="btn btn-outline-primary w-100 py-2 fw-bold">Entrar para Participar</a>
                     {% elif user == activity.organizer %}
-                    <button class="btn btn-secondary btn-sm w-100" disabled>Sua Atividade</button>
+                    <button class="btn btn-light w-100 py-2 border text-secondary fw-bold" disabled>Sua
+                        Atividade</button>
                     {% elif activity.id in user_registrations %}
-                    <button class="btn btn-success btn-sm w-100" disabled><i class="fa-solid fa-check me-1"></i>
-                        Inscrito</button>
+                    <button class="btn btn-success w-100 py-2 fw-bold" disabled><i
+                            class="fa-solid fa-circle-check me-2"></i>Inscrição Confirmada</button>
                     {% else %}
-                    <form action="{% url 'subscribe_activity' activity.id %}" method="POST" class="d-inline w-100">
+                    <form action="{% url 'subscribe_activity' activity.id %}" method="POST" class="m-0">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-sm w-100">Participar</button>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">Garantir
+                            Vaga</button>
                     </form>
                     {% endif %}
                 </div>
@@ -80,11 +141,12 @@
         </div>
     </div>
     {% empty %}
-    <div class="col-12 text-center py-5">
-        <i class="fa-solid fa-calendar-xmark fs-1 text-secondary mb-3"></i>
-        <h4 class="h5 fw-bold">Nenhuma atividade cadastrada ainda</h4>
-        <p class="text-secondary">Cadastre modalidades, locais e atividades no painel administrativo para visualizar o
-            feed.</p>
+    <div class="col-12 text-center py-5 mt-4">
+        <div class="bg-body-tertiary rounded-4 p-5 d-inline-block shadow-sm">
+            <i class="fa-solid fa-map-location-dot fs-1 text-primary mb-3 opacity-50"></i>
+            <h4 class="h5 fw-bold mb-2">O feed está vazio</h4>
+            <p class="text-secondary mb-0">Seja o primeiro a organizar uma atividade ou aguarde novas publicações.</p>
+        </div>
     </div>
     {% endfor %}
 </div>

@@ -8,6 +8,7 @@ from .models import (
     ROLE_PARTICIPANT,
 )
 
+# Permissões base do participante (apenas leitura do que importa)
 PARTICIPANT_PERMISSIONS = (
     ("accounts", "view_user"),
     ("accounts", "change_user"),
@@ -19,6 +20,7 @@ PARTICIPANT_PERMISSIONS = (
     ("registrations", "view_attendance"),
 )
 
+# Organizador herda o participante e ganha poder de escrita (apenas nas suas atividades, via admin.py)
 ORGANIZER_PERMISSIONS = PARTICIPANT_PERMISSIONS + (
     ("activities", "add_activity"),
     ("activities", "change_activity"),
@@ -78,13 +80,20 @@ def promote_to_organizer(user):
     if user.is_superuser:
         return user
 
-    if user.role != ROLE_ORGANIZER:
-        get_user_model().objects.filter(pk=user.pk).update(role=ROLE_ORGANIZER)
+    User = get_user_model()
+    
+    # Atualiza a flag de equipe para acesso ao painel Admin
+    if not user.is_staff or user.role != ROLE_ORGANIZER:
+        User.objects.filter(pk=user.pk).update(role=ROLE_ORGANIZER, is_staff=True)
         user.role = ROLE_ORGANIZER
+        user.is_staff = True
 
     sync_user_group(user)
     user.refresh_from_db()
+    
+    # Limpa cache de permissões da sessão atual
     for cache_attr in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
         if hasattr(user, cache_attr):
             delattr(user, cache_attr)
+            
     return user

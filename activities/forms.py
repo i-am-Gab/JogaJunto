@@ -20,13 +20,19 @@ class ActivityForm(forms.ModelForm):
                     else "form-control"
                 )
 
+        # O formato exato que o HTML5 exige para não limpar o campo em caso de erro
+        html5_date_format = '%Y-%m-%dT%H:%M'
+
         # Transforma os campos de data no calendário nativo do navegador
         self.fields["starts_at"].widget = forms.DateTimeInput(
+            format=html5_date_format,
             attrs={"type": "datetime-local", "class": "form-control"}
         )
         self.fields["ends_at"].widget = forms.DateTimeInput(
+            format=html5_date_format,
             attrs={"type": "datetime-local", "class": "form-control"}
         )
         self.fields["confirmation_deadline"].widget = forms.DateTimeInput(
+            format=html5_date_format,
             attrs={"type": "datetime-local", "class": "form-control"}
         )

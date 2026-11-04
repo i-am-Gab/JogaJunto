@@ -14,7 +14,7 @@ def home(request):
     # Conta inscrições que NÃO foram canceladas nem rejeitadas
     activities = (
         Activity.objects.filter(status="PUBLISHED")
-        .select_related("modality", "location")
+        .select_related("modality", "location", "organizer")
         .annotate(
             active_registrations=Count(
                 "registrations",

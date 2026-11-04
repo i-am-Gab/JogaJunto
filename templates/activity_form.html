@@ -4,41 +4,68 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm border-0 bg-body-tertiary mb-5">
-            <div class="card-header bg-primary text-white py-3">
-                <h4 class="mb-0"><i class="fa-solid fa-plus-circle me-2"></i>Criar Nova Atividade</h4>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST">
+    <div class="col-md-8 col-lg-7">
+
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">Nova Atividade</h2>
+            <p class="text-secondary">Preencha os detalhes para convidar a galera</p>
+        </div>
+
+        <div class="card shadow border-0 bg-body-tertiary mb-5 rounded-4 overflow-hidden">
+            <div class="card-body p-4 p-md-5">
+                <form method="POST" id="activityForm">
                     {% csrf_token %}
 
-                    <div class="row g-3">
+                    <div class="row g-4">
                         {% for field in form %}
-                        <div class="col-md-{% if field.name in 'title,description' %}12{% else %}6{% endif %} mb-2">
-                            <label class="form-label fw-bold">{{ field.label }}</label>
+                        <div class="col-md-{% if field.name in 'title,description' %}12{% else %}6{% endif %}">
+                            <label class="form-label fw-bold text-secondary mb-1 fs-7">{{ field.label }}</label>
+
                             {{ field }}
+
                             {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text }}</div>
+                            <div class="form-text fs-7 opacity-75 mt-1">{{ field.help_text }}</div>
                             {% endif %}
+
                             {% if field.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ field.errors|join:", " }}
+                            <div class="text-danger small mt-1 fw-medium">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ field.errors|join:", " }}
                             </div>
                             {% endif %}
                         </div>
                         {% endfor %}
                     </div>
 
-                    <hr class="my-4 opacity-25">
+                    <hr class="my-5 opacity-10">
 
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-success">Publicar Atividade</button>
+                    <div class="d-flex justify-content-end gap-3">
+                        <a href="{% url 'home' %}" class="btn btn-light border px-4 fw-medium">Cancelar</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                            <i class="fa-solid fa-check me-2"></i>Publicar Atividade
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Script para garantir que os inputs do Django fiquem com o visual do Bootstrap -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const formElements = document.querySelectorAll("#activityForm input, #activityForm select, #activityForm textarea");
+        formElements.forEach(function (element) {
+            // Ignora o token CSRF
+            if (element.name !== "csrfmiddlewaretoken") {
+                if (element.tagName === "SELECT") {
+                    element.classList.add("form-select");
+                } else {
+                    element.classList.add("form-control");
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

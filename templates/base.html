@@ -16,6 +16,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            background-color: var(--bs-body-bg);
         }
 
         main {
@@ -23,8 +24,12 @@
         }
 
         .navbar-brand {
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: -0.5px;
+        }
+
+        .fs-7 {
+            font-size: 0.85rem;
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -32,41 +37,60 @@
 
 <body>
 
-    <!-- Navbar -->
-    <div class="d-flex align-items-center gap-2">
-        <!-- Botão de Troca de Tema -->
-        <button class="btn btn-outline-secondary btn-sm" id="themeToggle" type="button">
-            <i class="fa-solid fa-moon" id="themeIcon"></i>
-        </button>
+    <!-- Navbar Corrigida -->
+    <nav class="navbar navbar-expand bg-body-tertiary shadow-sm py-3 border-bottom">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
+                <i class="fa-solid fa-person-running me-2 fs-4"></i>
+                <span>JogaJunto</span>
+            </a>
 
-        {% if user.is_authenticated %}
-        <a href="{% url 'create_activity' %}" class="btn btn-success btn-sm"><i class="fa-solid fa-plus me-1"></i> Nova
-            Atividade</a>
+            <!-- Menu Lado Direito -->
+            <div class="d-flex align-items-center gap-3 ms-auto">
 
-        <div class="dropdown">
-            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                Olá, <strong>{{ user.first_name|default:user.username }}</strong>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="{% url 'admin:index' %}">Painel Admin</a></li>
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-                <li>
-                    <!-- Django 5 exige POST para fazer logout por segurança -->
-                    <form action="{% url 'logout' %}?next=/" method="post" class="m-0 p-0">
-                        {% csrf_token %}
-                        <button type="submit" class="dropdown-item text-danger">Sair</button>
-                    </form>
-                </li>
-            </ul>
+                <!-- Botão de Troca de Tema -->
+                <button class="btn btn-light border btn-sm text-secondary rounded-circle" id="themeToggle" type="button"
+                    style="width: 35px; height: 35px;">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+
+                {% if user.is_authenticated %}
+                <a href="{% url 'create_activity' %}"
+                    class="btn btn-primary btn-sm fw-bold shadow-sm d-none d-sm-block">
+                    <i class="fa-solid fa-plus me-1"></i> Nova Atividade
+                </a>
+
+                <!-- Apenas Ícone de + no Celular -->
+                <a href="{% url 'create_activity' %}" class="btn btn-primary btn-sm shadow-sm d-block d-sm-none">
+                    <i class="fa-solid fa-plus"></i>
+                </a>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle fw-medium" type="button"
+                        data-bs-toggle="dropdown">
+                        <i class="fa-regular fa-circle-user me-1"></i> {{ user.first_name|default:user.username }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        <li><a class="dropdown-item fw-medium" href="{% url 'admin:index' %}"><i
+                                    class="fa-solid fa-gauge me-2 text-secondary"></i>Painel Admin</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <form action="{% url 'logout' %}?next=/" method="post" class="m-0 p-0">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger fw-medium"><i
+                                        class="fa-solid fa-right-from-bracket me-2"></i>Sair</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm fw-bold">Entrar</a>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <a href="{% url 'admin:login' %}?next=/" class="btn btn-primary btn-sm">Entrar</a>
-        {% endif %}
-    </div>
-    </div>
-    </div>
     </nav>
 
     <!-- Conteúdo Dinâmico -->
@@ -77,9 +101,10 @@
     </main>
 
     <!-- Footer -->
-    <footer class="py-3 border-top bg-body-tertiary text-center text-muted fs-7">
+    <footer class="py-4 mt-auto border-top bg-body-tertiary text-center text-muted fs-7">
         <div class="container">
-            <p class="mb-0">&copy; 2026 JogaJunto — Disciplina GAC116 (UFLA)</p>
+            <p class="mb-0 fw-medium">&copy; 2026 JogaJunto</p>
+            <p class="mb-0 opacity-75 small">Disciplina GAC116 (UFLA) - Arquitetura MVT</p>
         </div>
     </footer>
 
@@ -92,7 +117,6 @@
         const themeIcon = document.getElementById('themeIcon');
         const htmlElement = document.documentElement;
 
-        // Recupera o tema salvo ou usa 'light'
         const currentTheme = localStorage.getItem('theme') || 'light';
         htmlElement.setAttribute('data-bs-theme', currentTheme);
         updateIcon(currentTheme);
@@ -106,14 +130,13 @@
 
         function updateIcon(theme) {
             if (theme === 'dark') {
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
             } else {
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
             }
         }
     </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 

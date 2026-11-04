@@ -1,8 +1,7 @@
 from django.contrib import admin
-
 from accounts.permissions import promote_to_organizer
-from registrations.models import Registration
-
+from accounts.models import GROUP_ORGANIZER
+from registrations.models import Registration 
 from .models import Activity, Location, Modality
 
 
@@ -49,6 +48,13 @@ class ModalityAdmin(admin.ModelAdmin):
         ("Informações da Modalidade", {"fields": ("name", "description", "is_active")}),
     )
 
+    # Restringe edição/deleção de cadastros base apenas para o superusuário
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
@@ -83,6 +89,13 @@ class LocationAdmin(admin.ModelAdmin):
         ),
     )
 
+    # Restringe edição/deleção de cadastros base apenas para o superusuário
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
@@ -113,6 +126,7 @@ class ActivityAdmin(admin.ModelAdmin):
     date_hierarchy = "starts_at"
     inlines = [RegistrationInline]
     exclude = ["organizer"]
+    
     fieldsets = (
         (
             "Detalhes da Atividade",
@@ -142,14 +156,16 @@ class ActivityAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             promote_to_organizer(request.user)
 
+    # Filtra listagem: Admin vê tudo; organizador vê as dele; participante vê as que está inscrito
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        if request.user.has_organizer_group():
+        if request.user.groups.filter(name=GROUP_ORGANIZER).exists():
             return qs.filter(organizer=request.user)
         return qs.filter(registrations__participant=request.user).distinct()
 
+    # Controle de visibilidade do formulário de edição
     def has_view_permission(self, request, obj=None):
         if not super().has_view_permission(request, obj):
             return False
@@ -159,6 +175,7 @@ class ActivityAdmin(admin.ModelAdmin):
             return True
         return obj.registrations.filter(participant=request.user).exists()
 
+    # Controle de edição: Apenas o dono ou o Admin podem alterar
     def has_change_permission(self, request, obj=None):
         if not super().has_change_permission(request, obj):
             return False
@@ -166,6 +183,7 @@ class ActivityAdmin(admin.ModelAdmin):
             return True
         return obj.organizer_id == request.user.pk
 
+    # Controle de exclusão: Apenas o dono ou o Admin podem apagar
     def has_delete_permission(self, request, obj=None):
         if not super().has_delete_permission(request, obj):
             return False
