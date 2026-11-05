@@ -196,7 +196,7 @@ Encerre o servidor com `Ctrl+C`. Nas execuções seguintes, basta entrar na past
 
 ### Configuração e primeiros cadastros
 
-O banco SQLite `db.sqlite3` é criado por `migrate`. Os dados de demonstração devem ser cadastrados pelo grupo; não há comando de carga de exemplos no projeto.
+O banco SQLite `db.sqlite3` é criado por `migrate`. Para cadastrar dados manualmente, siga os passos abaixo. Para carregar exemplos prontos, use o comando `seed_demo` descrito a seguir.
 
 1. Entre no Admin com o superusuário criado.
 2. Cadastre modalidades e locais.
@@ -206,6 +206,37 @@ O banco SQLite `db.sqlite3` é criado por `migrate`. Os dados de demonstração 
 A aplicação lê `SECRET_KEY` das variáveis de ambiente ou de um arquivo `.env` na pasta do projeto. Sem essa configuração, usa uma chave padrão de desenvolvimento. `DEBUG=True` e SQLite estão configurados para execução local. O fuso horário é `America/Sao_Paulo`.
 
 Bootstrap e outros recursos visuais utilizam CDN; mantenha conexão com a internet durante a demonstração para carregar esses recursos.
+
+### Dados de demonstração (`seed_demo`)
+
+Depois de aplicar as migrations, execute na pasta do projeto:
+
+```powershell
+python manage.py seed_demo
+```
+
+O comando cria **7 usuários, 4 modalidades, 3 locais fictícios, 7 atividades e 13 inscrições**, além de notificações. Modalidades, locais e atividades usam o prefixo `[DEMO]`.
+
+| Conta | Perfil |
+| --- | --- |
+| `demo_admin` | Superusuário |
+| `demo_organizador` | Organizador Rafael |
+| `demo_organizador2` | Organizadora Mariana |
+| `demo_ana`, `demo_bruno`, `demo_carla`, `demo_diego` | Participantes |
+
+A senha inicial das contas novas é **`JogaJuntoDemo!2026`**. Entre com o nome de usuário. Você pode escolher outra senha na primeira carga:
+
+```powershell
+python manage.py seed_demo --password "SuaSenhaDeDemonstracao!2026"
+```
+
+Os exemplos incluem inscrição pendente, aprovada, rejeitada, cancelada e em lista de espera; uma atividade lotada com fila; uma vaga reservada aguardando confirmação; atividades com inscrição automática e por aprovação; rascunho e atividades cancelada e finalizada. Entre com `demo_diego` para testar a confirmação da vaga reservada. Com `demo_ana`, cancele a inscrição no futebol para testar o aviso ao primeiro da fila (`demo_bruno`).
+
+As atividades abertas são criadas com datas futuras em relação à primeira execução, no fuso do projeto. A atividade finalizada usa datas passadas.
+
+Repetir o comando preserva registros existentes, senhas, permissões, datas e situações. Ele não apaga dados, não redefine contas e não repõe inscrições de atividades já existentes, inclusive se foram removidas ou alteradas durante os testes. As datas dos exemplos existentes também não são deslocadas para o futuro. Não são geradas notificações duplicadas. Se um dos nomes de usuário já pertencer a uma conta com outro e-mail, a carga é interrompida sem gravar alterações.
+
+Os cadastros são feitos em uma única transação. A carga não dispara as rotinas normais de sincronização de grupos ou redistribuição de vagas; as permissões das contas novas e as notificações dos exemplos são configuradas explicitamente.
 
 ### Verificações e testes
 
