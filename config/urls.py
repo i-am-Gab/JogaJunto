@@ -7,6 +7,9 @@ from registrations import views as registration_views
 from accounts.forms import LoginForm
 
 urlpatterns = [
+    path("minhas-inscricoes/<int:registration_id>/confirmar-vaga/", registration_views.confirm_waitlist_seat, name="confirm_waitlist_seat"),
+    path("minhas-inscricoes/", registration_views.my_registrations, name="my_registrations"),
+    path("minhas-inscricoes/<int:registration_id>/cancelar/", registration_views.cancel_registration, name="cancel_registration"),
     path("organizador/inscricoes/", registration_views.review_registrations, name="review_registrations"),
     path("organizador/inscricoes/<int:registration_id>/decidir/", registration_views.decide_registration, name="decide_registration"),
     path("notificacoes/", registration_views.notifications, name="notifications"),

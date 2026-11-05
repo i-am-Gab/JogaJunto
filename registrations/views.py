@@ -10,6 +10,66 @@ from django.db.models import Count
 from activities.models import Activity
 from .models import Registration
 from django.http import Http404, HttpResponseBadRequest
+from .waitlist import occupied_seats
+
+
+@login_required
+@require_POST
+def confirm_waitlist_seat(request, registration_id):
+    queryset = Registration.objects.filter(participant=request.user)
+    registration = get_object_or_404(queryset, pk=registration_id)
+    with transaction.atomic():
+        activity = Activity.objects.select_for_update().get(pk=registration.activity_id)
+        registration = queryset.select_for_update().get(pk=registration.pk)
+        registration.activity = activity
+        if not registration.can_confirm_seat:
+            messages.warning(request, "Não há uma vaga reservada para confirmar ou o prazo de inscrição terminou.")
+        elif occupied_seats(activity.registrations.exclude(pk=registration.pk)).count() >= activity.max_participants:
+            messages.warning(request, "Não há vagas disponíveis. Entre em contato com o organizador.")
+        else:
+            registration.status = "APPROVED" if activity.registration_type == "AUTO" else "PENDING"
+            registration.save(update_fields=["status"])
+            if registration.status == "PENDING":
+                messages.success(request, "Você aceitou a vaga. Sua inscrição aguarda aprovação do organizador.")
+            else:
+                messages.success(request, "Vaga aceita! Sua inscrição está confirmada.")
+    return redirect("my_registrations")
+
+
+@login_required
+def my_registrations(request):
+    queryset = Registration.objects.filter(participant=request.user).select_related("activity__location", "activity__modality", "activity__organizer")
+    selected = request.GET.get("situacao", "ALL")
+    if selected not in {"ALL", *dict(Registration.STATUS_CHOICES)}:
+        selected = "ALL"
+    counts = dict(queryset.values("status").annotate(total=Count("pk")).values_list("status", "total"))
+    labels = [("ALL", "Todas"), ("PENDING", "Pendentes"), ("APPROVED", "Confirmadas"), ("WAITLIST", "Lista de espera"), ("REJECTED", "Rejeitadas"), ("CANCELED", "Canceladas")]
+    tabs = [{"value": value, "label": label, "count": sum(counts.values()) if value == "ALL" else counts.get(value, 0)} for value, label in labels]
+    if selected != "ALL":
+        queryset = queryset.filter(status=selected)
+    page = Paginator(queryset.order_by("-requested_at", "-pk"), 15).get_page(request.GET.get("page"))
+    return render(request, "registrations/mine.html", {"page_obj": page, "tabs": tabs, "selected": selected})
+
+
+@login_required
+@require_POST
+def cancel_registration(request, registration_id):
+    queryset = Registration.objects.filter(participant=request.user)
+    registration = get_object_or_404(queryset, pk=registration_id)
+    with transaction.atomic():
+        # Mesma ordem de bloqueio da aprovação, para não cancelar e aprovar ao mesmo tempo.
+        activity = Activity.objects.select_for_update().get(pk=registration.activity_id)
+        registration = queryset.select_for_update().get(pk=registration.pk)
+        registration.activity = activity
+        if registration.status == "CANCELED":
+            messages.info(request, "Esta inscrição já está cancelada.")
+        elif not registration.can_cancel:
+            messages.warning(request, "Esta inscrição não pode mais ser cancelada. O cancelamento está disponível para inscrições ativas antes do início da atividade.")
+        else:
+            registration.status = "CANCELED"
+            registration.save(update_fields=["status"])
+            messages.success(request, f'Sua inscrição em "{activity.title}" foi cancelada. O organizador foi notificado.')
+    return redirect("my_registrations")
 
 
 @login_required

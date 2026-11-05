@@ -58,6 +58,7 @@
                 </button>
 
                 {% if user.is_authenticated %}
+                <a href="{% url 'my_registrations' %}" class="btn btn-outline-primary btn-sm">Minhas inscrições</a>
                 <a href="{% url 'notifications' %}" class="btn btn-outline-secondary btn-sm">
                     <i class="fa-regular fa-bell" aria-hidden="true"></i> Notificações
                     {% if unread_notifications %}<span class="badge bg-danger">{{ unread_notifications }}<span class="visually-hidden"> não lidas</span></span>{% endif %}

@@ -26,8 +26,16 @@ def notify_registration(sender, instance, created, raw=False, update_fields=None
         recipient=instance.participant, registration=instance,
         message=f'Sua inscrição em "{instance.activity.title}" {descriptions[instance.status]}.',
     )
-    if created and instance.status == "PENDING":
+    if instance.status == "PENDING" and (created or getattr(instance, "_previous_status", None) in ("CANCELED", "WAITLIST")):
         Notification.objects.create(
             recipient=instance.activity.organizer, registration=instance,
             message=f'{instance.participant} solicitou inscrição em "{instance.activity.title}". Aguardando sua aprovação.',
         )
+    if instance.status == "CANCELED":
+        Notification.objects.create(
+            recipient=instance.activity.organizer, registration=instance,
+            message=f'A inscrição de {instance.participant} em "{instance.activity.title}" foi cancelada.',
+        )
+    if instance.status in ("CANCELED", "REJECTED"):
+        from .waitlist import offer_available_seats
+        offer_available_seats(instance.activity_id)

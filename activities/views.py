@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 
 from django.core.exceptions import PermissionDenied
 from registrations.models import Registration
+from registrations.waitlist import occupied_seats, offer_available_seats
 
 from .forms import ActivityForm
 from .models import Activity
@@ -20,7 +21,7 @@ def home(request):
         .annotate(
             active_registrations=Count(
                 "registrations",
-                filter=~Q(registrations__status__in=["REJECTED", "CANCELED"]),
+                filter=Q(registrations__status__in=["PENDING", "APPROVED"]) | Q(registrations__status="WAITLIST", registrations__seat_offered_at__isnull=False),
             )
         )
         .order_by("starts_at")
@@ -28,9 +29,11 @@ def home(request):
 
     registrations = {}
     if request.user.is_authenticated:
-        registrations = dict(Registration.objects.filter(participant=request.user).values_list("activity_id", "status"))
+        registrations = {row.activity_id: row for row in Registration.objects.filter(participant=request.user).select_related("activity")}
     for activity in activities:
-        activity.user_registration_status = registrations.get(activity.pk)
+        registration = registrations.get(activity.pk)
+        activity.user_registration_status = registration.status if registration else None
+        activity.user_seat_offered = registration.can_confirm_seat if registration else False
     return render(request, "home.html", {"activities": activities})
 
 
@@ -57,36 +60,36 @@ def create_activity(request):
 @login_required
 @require_POST
 def subscribe_activity(request, activity_id):
-    activity = get_object_or_404(Activity, id=activity_id, status="PUBLISHED")
-
-    if activity.organizer == request.user:
-        messages.warning(request, "Você é o organizador desta atividade!")
-        return redirect("home")
-
-    current_subscriptions = (
-        Registration.objects.filter(activity=activity)
-        .exclude(status__in=["REJECTED", "CANCELED"])
-        .count()
-    )
-    if current_subscriptions >= activity.max_participants:
-        messages.error(
-            request, "Esta atividade já atingiu o limite máximo de participantes."
-        )
-        return redirect("home")
-
+    destination = "my_registrations" if request.POST.get("source") == "mine" else "home"
     try:
-        initial_status = (
-            "APPROVED" if activity.registration_type == "AUTO" else "PENDING"
-        )
         with transaction.atomic():
-            Registration.objects.create(
-                activity=activity, participant=request.user, status=initial_status
-            )
-        if initial_status == "PENDING":
+            activity = get_object_or_404(Activity.objects.select_for_update(), pk=activity_id)
+            if activity.organizer == request.user:
+                messages.warning(request, "Você é o organizador desta atividade!")
+                return redirect(destination)
+            registration = Registration.objects.select_for_update().filter(activity=activity, participant=request.user).first()
+            if registration and registration.status != "CANCELED":
+                messages.warning(request, "Você já possui uma inscrição para esta atividade. Apenas inscrições canceladas podem ser refeitas.")
+                return redirect(destination)
+            if not activity.accepts_registrations:
+                messages.warning(request, "Esta atividade não aceita inscrições: o prazo terminou, ela já começou ou não está publicada.")
+                return redirect(destination)
+            offer_available_seats(activity.pk)
+            occupied = occupied_seats(activity.registrations).count()
+            initial_status = "APPROVED" if activity.registration_type == "AUTO" else "PENDING"
+            if occupied >= activity.max_participants:
+                initial_status = "WAITLIST"
+            if registration:
+                registration.status = initial_status
+                registration.save(update_fields=["status"])
+            else:
+                Registration.objects.create(activity=activity, participant=request.user, status=initial_status)
+        if initial_status == "WAITLIST":
+            messages.info(request, "A atividade está lotada. Você entrou na lista de espera e será avisado quando uma vaga estiver disponível.")
+        elif initial_status == "PENDING":
             messages.info(request, f"Inscrição em {activity.title} pendente de aprovação do organizador.")
         else:
             messages.success(request, f"Inscrição confirmada em {activity.title}!")
     except IntegrityError:
-        messages.error(request, "Você já possui uma inscrição para esta atividade.")
-
-    return redirect("home")
+        messages.warning(request, "A inscrição já foi registrada. Atualize a página para acompanhar a situação.")
+    return redirect(destination)

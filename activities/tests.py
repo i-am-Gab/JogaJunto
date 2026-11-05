@@ -161,6 +161,84 @@ class CreateActivityPromotionTests(ActivityFactoryMixin, TestCase):
         self.assertTrue(Activity.objects.filter(title="Pedal da manha").exists())
 
 
+class ResubscriptionTests(ActivityFactoryMixin, TestCase):
+    def setUp(self):
+        self.owner = self.create_user("dono_reinscricao", organizer=True)
+        self.person = self.create_user("pessoa_reinscricao")
+        self.activity = self.create_activity(self.owner)
+        self.registration = Registration.objects.create(activity=self.activity, participant=self.person, status="APPROVED", organizer_notes="Nota preservada")
+        self.client.force_login(self.person)
+        self.client.post(reverse("cancel_registration", args=[self.registration.pk]))
+        self.registration.refresh_from_db()
+
+    def test_automatic_reuses_registration_and_resets_dates(self):
+        registration_id = self.registration.pk
+        old_requested_at = self.registration.requested_at
+        before = timezone.now()
+        response = self.client.post(reverse("subscribe_activity", args=[self.activity.pk]), {"source": "mine"}, follow=True)
+        self.assertContains(response, "Inscrição confirmada")
+        self.registration.refresh_from_db()
+        self.assertEqual(self.registration.pk, registration_id)
+        self.assertEqual(Registration.objects.filter(activity=self.activity, participant=self.person).count(), 1)
+        self.assertEqual(self.registration.status, "APPROVED")
+        self.assertIsNone(self.registration.cancelled_at)
+        self.assertGreater(self.registration.requested_at, old_requested_at)
+        self.assertGreaterEqual(self.registration.confirmed_at, before)
+        self.assertEqual(self.registration.organizer_notes, "Nota preservada")
+        self.assertTrue(self.person.notifications.filter(message__contains="foi cancelada").exists())
+        count = self.person.notifications.count()
+        requested_at = self.registration.requested_at
+        self.client.post(reverse("subscribe_activity", args=[self.activity.pk]))
+        self.registration.refresh_from_db()
+        self.assertEqual(self.person.notifications.count(), count)
+        self.assertEqual(self.registration.requested_at, requested_at)
+
+    def test_manual_requires_fresh_approval_and_notifies_owner(self):
+        self.activity.registration_type = "MANUAL"
+        self.activity.save()
+        count = self.owner.notifications.count()
+        self.assertContains(self.client.get(reverse("home")), "Inscrever-se novamente")
+        self.assertContains(self.client.get(reverse("my_registrations")), "Inscrever-se novamente")
+        self.client.post(reverse("subscribe_activity", args=[self.activity.pk]))
+        self.registration.refresh_from_db()
+        self.assertEqual(self.registration.status, "PENDING")
+        self.assertIsNone(self.registration.confirmed_at)
+        self.assertIsNone(self.registration.decided_at)
+        self.assertIsNone(self.registration.cancelled_at)
+        self.assertEqual(self.owner.notifications.count(), count + 1)
+        self.assertContains(self.client.get(reverse("my_registrations")), "Pendente de aprovação")
+        self.client.force_login(self.owner)
+        self.client.post(reverse("decide_registration", args=[self.registration.pk]), {"decision": "APPROVED"})
+        self.registration.refresh_from_db()
+        self.assertEqual(self.registration.status, "APPROVED")
+        self.assertIsNotNone(self.registration.confirmed_at)
+
+    def test_resubscription_joins_waitlist_when_full_and_rejects_closed_activity(self):
+        self.activity.max_participants = 1
+        self.activity.save()
+        another = self.create_user("outra_pessoa")
+        Registration.objects.create(activity=self.activity, participant=another, status="PENDING")
+        url = reverse("subscribe_activity", args=[self.activity.pk])
+        response = self.client.post(url, follow=True)
+        self.assertContains(response, "Você entrou na lista de espera")
+        self.registration.refresh_from_db()
+        self.assertEqual(self.registration.status, "WAITLIST")
+        self.client.post(reverse("cancel_registration", args=[self.registration.pk]))
+        self.activity.max_participants = 10
+        self.activity.confirmation_deadline = timezone.now() - timedelta(minutes=1)
+        self.activity.save()
+        self.client.post(url)
+        self.registration.refresh_from_db()
+        self.assertEqual(self.registration.status, "CANCELED")
+        self.assertNotContains(self.client.get(reverse("my_registrations")), "Inscrever-se novamente")
+        self.activity.confirmation_deadline = timezone.now() + timedelta(hours=1)
+        self.activity.status = "CANCELED"
+        self.activity.save()
+        self.client.post(url)
+        self.registration.refresh_from_db()
+        self.assertEqual(self.registration.status, "CANCELED")
+
+
 class ActivityValidationTests(ActivityFactoryMixin, TestCase):
     def setUp(self):
         self.owner = self.create_user("validacao", organizer=True)

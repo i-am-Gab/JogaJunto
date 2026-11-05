@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Minhas inscrições — JogaJunto{% endblock %}
+{% block content %}
+<div class="review-page mx-auto">
+    <header class="my-4 d-flex flex-wrap gap-3 justify-content-between align-items-start">
+        <div><h1 class="h2 fw-bold">Minhas inscrições</h1><p class="text-secondary mb-0">Acompanhe suas solicitações, suas vagas confirmadas e seu histórico.</p></div>
+        <a href="{% url 'home' %}" class="btn btn-outline-primary">Encontrar atividades</a>
+    </header>
+    <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Filtrar minhas inscrições">
+        {% for tab in tabs %}<a href="?situacao={{ tab.value }}" class="btn {% if selected == tab.value %}btn-primary{% else %}btn-outline-secondary{% endif %}" {% if selected == tab.value %}aria-current="page"{% endif %}>{{ tab.label }} <span class="badge {% if selected == tab.value %}bg-light text-primary{% else %}bg-secondary{% endif %}">{{ tab.count }}</span></a>{% endfor %}
+    </nav>
+    {% for registration in page_obj %}
+    <article class="card shadow-sm mb-4" id="inscricao-{{ registration.pk }}">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-3">
+                <div><span class="small text-secondary">{{ registration.activity.modality }}</span><h2 class="h4 fw-bold mt-1 mb-0">{{ registration.activity.title }}</h2></div>
+                <span class="badge {% if registration.status == 'PENDING' %}bg-warning text-dark{% elif registration.status == 'APPROVED' %}bg-success{% elif registration.status == 'REJECTED' %}bg-danger{% elif registration.status == 'WAITLIST' %}bg-info text-dark{% else %}bg-secondary{% endif %}">{% if registration.status == 'PENDING' %}Pendente de aprovação{% elif registration.status == 'APPROVED' %}Inscrição confirmada{% else %}{{ registration.get_status_display }}{% endif %}</span>
+            </div>
+            <div class="bg-body-tertiary border rounded-3 p-3 mb-3">
+                <p class="mb-1"><strong>{{ registration.activity.starts_at|date:'d/m/Y' }}</strong> · {{ registration.activity.starts_at|date:'H:i' }} às {{ registration.activity.ends_at|date:'d/m/Y H:i' }}</p>
+                <p class="mb-1">{{ registration.activity.location }}</p>
+                <p class="mb-0 small text-secondary">Organização: {{ registration.activity.organizer }}</p>
+            </div>
+            {% if registration.activity.status == 'CANCELED' %}
+            <p class="text-danger">Esta atividade foi cancelada pelo organizador.</p>
+            {% elif registration.activity.status == 'FINISHED' %}
+            <p class="text-secondary">Atividade finalizada.</p>
+            {% elif registration.status == 'PENDING' %}
+            <p>Aguardando a análise do organizador. Você receberá uma notificação com a decisão.</p>
+            {% elif registration.status == 'APPROVED' %}
+            <p>Sua vaga está confirmada.{% if registration.confirmed_at %} Confirmação registrada em {{ registration.confirmed_at|date:'d/m/Y H:i' }}.{% endif %}</p>
+            {% elif registration.status == 'WAITLIST' %}
+            {% if registration.can_confirm_seat %}
+            <div class="alert alert-success">
+                <h3 class="h6 fw-bold">Uma vaga está reservada para você!</h3>
+                <p>Confirme até {{ registration.activity.confirmation_deadline|date:'d/m/Y H:i' }}.{% if registration.activity.registration_type == 'MANUAL' %} Após aceitar, sua inscrição passará pela aprovação do organizador.{% endif %}</p>
+                <form method="post" action="{% url 'confirm_waitlist_seat' registration.pk %}">{% csrf_token %}<button class="btn btn-success">Confirmar minha vaga</button></form>
+            </div>
+            {% else %}
+            <p>Você está na lista de espera. Acompanhe as notificações sobre a disponibilidade de vagas.</p>
+            {% endif %}
+            {% elif registration.status == 'REJECTED' %}
+            <p>O organizador não aprovou sua solicitação.</p>
+            {% elif registration.status == 'CANCELED' %}
+            <p>Inscrição cancelada{% if registration.cancelled_at %} em {{ registration.cancelled_at|date:'d/m/Y H:i' }}{% endif %}.</p>
+            {% endif %}
+            <p class="small text-secondary">Inscrição solicitada em {{ registration.requested_at|date:'d/m/Y H:i' }}.</p>
+            {% if registration.can_resubscribe %}
+            <p class="small text-secondary">Você pode se inscrever novamente. Se não houver vagas, entrará na lista de espera.{% if registration.activity.registration_type == 'MANUAL' %} Sua solicitação passará por uma nova aprovação.{% endif %}</p>
+            <form method="post" action="{% url 'subscribe_activity' registration.activity_id %}">
+                {% csrf_token %}<input type="hidden" name="source" value="mine">
+                <button class="btn btn-primary">Inscrever-se novamente</button>
+            </form>
+            {% endif %}
+            {% if registration.can_cancel %}
+            <details class="cancel-registration">
+                <summary class="text-danger">Cancelar inscrição</summary>
+                <div class="border rounded-3 p-3 mt-3">
+                    <p class="mb-2">Deseja cancelar sua inscrição em <strong>{{ registration.activity.title }}</strong>?</p>
+                    <p class="small text-secondary">Você deixará de participar e o organizador será notificado.</p>
+                    <form method="post" action="{% url 'cancel_registration' registration.pk %}">{% csrf_token %}<button class="btn btn-outline-danger">Confirmar cancelamento</button></form>
+                </div>
+            </details>
+            {% elif registration.status == 'PENDING' or registration.status == 'APPROVED' or registration.status == 'WAITLIST' %}
+            <p class="small text-secondary mb-0">O cancelamento fica disponível antes do início, enquanto a atividade estiver publicada.</p>
+            {% endif %}
+        </div>
+    </article>
+    {% empty %}
+    <div class="card text-center p-5"><h2 class="h5">Nenhuma inscrição{% if selected != 'ALL' %} nesta situação{% endif %}</h2><p class="text-secondary">As atividades em que você se inscrever aparecerão aqui.</p><a href="{% url 'home' %}">Explorar atividades</a></div>
+    {% endfor %}
+    {% if page_obj.has_other_pages %}<nav class="d-flex justify-content-between gap-3" aria-label="Páginas das minhas inscrições">
+        {% if page_obj.has_previous %}<a href="?situacao={{ selected }}&amp;page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?situacao={{ selected }}&amp;page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+    </nav>{% endif %}
+</div>
+{% endblock %}

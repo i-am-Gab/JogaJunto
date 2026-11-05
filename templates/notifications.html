@@ -16,6 +16,9 @@
             <p>{{ notification.message }}</p>
             <div class="d-flex flex-wrap gap-2">
                 {% if notification.registration %}
+                {% if notification.registration.participant_id == user.id %}
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'my_registrations' %}">Ver minhas inscrições</a>
+                {% endif %}
                 {% if user.has_organizer_group and notification.registration.activity.organizer_id == user.id %}
                 <a class="btn btn-outline-primary btn-sm" href="{% url 'review_registrations' %}?situacao=ALL&amp;atividade={{ notification.registration.activity_id }}#inscricao-{{ notification.registration_id }}">Ver solicitações da atividade</a>
                 {% endif %}

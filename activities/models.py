@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 
 
 class Modality(models.Model):
@@ -89,6 +90,11 @@ class Activity(models.Model):
 
     created_at = models.DateTimeField("Criada em", auto_now_add=True)
     updated_at = models.DateTimeField("Atualizada em", auto_now=True)
+
+    @property
+    def accepts_registrations(self):
+        now = timezone.now()
+        return self.status == "PUBLISHED" and now < self.starts_at and now < self.confirmation_deadline
 
     def clean(self):
         super().clean()

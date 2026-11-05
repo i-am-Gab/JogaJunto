@@ -20,6 +20,7 @@ textarea.form-control { min-height: 7rem; }
 @media (max-width: 480px) { .jj-datetime { grid-template-columns: minmax(0, 1fr); } }
 
 .review-page { max-width: 960px; }
+.cancel-registration > summary { cursor: pointer; width: fit-content; padding: .5rem 0; font-weight: 600; }
 
 .registration-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .75rem; }
 .registration-details { flex: 1 1 230px; min-width: 0; max-width: 42rem; }

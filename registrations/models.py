@@ -27,6 +27,23 @@ class Registration(models.Model):
     confirmed_at = models.DateTimeField("Confirmado em", blank=True, null=True)
     cancelled_at = models.DateTimeField("Cancelado em", blank=True, null=True)
     organizer_notes = models.TextField("Notas do Organizador", blank=True, null=True)
+    seat_offered_at = models.DateTimeField("Vaga oferecida em", null=True, blank=True)
+
+    @property
+    def can_confirm_seat(self):
+        return self.status == "WAITLIST" and self.seat_offered_at is not None and self.activity.accepts_registrations
+
+    @property
+    def can_cancel(self):
+        return (
+            self.status in ("PENDING", "APPROVED", "WAITLIST")
+            and self.activity.status == "PUBLISHED"
+            and self.activity.starts_at > timezone.now()
+        )
+
+    @property
+    def can_resubscribe(self):
+        return self.status == "CANCELED" and self.activity.accepts_registrations
 
     def save(self, *args, **kwargs):
         update_fields = kwargs.get("update_fields")
@@ -35,6 +52,13 @@ class Registration(models.Model):
             changed_fields = set()
             if previous != self.status:
                 now = timezone.now()
+                if previous == "CANCELED" and self.status in ("PENDING", "APPROVED", "WAITLIST"):
+                    self.requested_at = now
+                    self.decided_at = self.confirmed_at = self.cancelled_at = None
+                    changed_fields.update(("requested_at", "decided_at", "confirmed_at", "cancelled_at"))
+                if self.status != "WAITLIST" or previous == "CANCELED":
+                    self.seat_offered_at = None
+                    changed_fields.add("seat_offered_at")
                 if self.status in ("APPROVED", "REJECTED"):
                     self.decided_at = now
                     changed_fields.add("decided_at")

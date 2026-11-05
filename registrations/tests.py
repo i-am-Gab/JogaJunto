@@ -297,3 +297,70 @@ class RegistrationAdminScopeTests(TestCase):
         pending.refresh_from_db()
         self.assertIsNotNone(pending.decided_at)
         self.assertEqual(pending.confirmed_at, pending.decided_at)
+
+    def test_my_registrations_are_private_and_show_status(self):
+        self.own_registration.organizer_notes = "Observação interna secreta"
+        self.own_registration.save(update_fields=["organizer_notes"])
+        self.client.force_login(self.participant)
+        response = self.client.get(reverse("my_registrations"))
+        self.assertContains(response, self.own_activity.title)
+        self.assertContains(response, "Inscrição confirmada")
+        self.assertContains(response, "Cancelar inscrição")
+        self.assertNotContains(response, self.other_activity.title)
+        self.assertNotContains(response, "Observação interna secreta")
+        self.assertEqual(list(response.context["page_obj"]), [self.own_registration])
+        for status, text in (("PENDING", "Pendente de aprovação"), ("WAITLIST", "Lista de Espera"), ("REJECTED", "Rejeitada"), ("CANCELED", "Cancelada")):
+            self.own_registration.status = status
+            self.own_registration.save()
+            self.assertContains(self.client.get(reverse("my_registrations")), text)
+
+    def test_cancel_is_owned_post_only_and_notifies_once(self):
+        self.client.force_login(self.participant)
+        url = reverse("cancel_registration", args=[self.own_registration.pk])
+        self.assertEqual(self.client.get(url).status_code, 405)
+        foreign = reverse("cancel_registration", args=[self.other_registration.pk])
+        self.assertEqual(self.client.post(foreign).status_code, 404)
+        before = self.owner.notifications.count()
+        response = self.client.post(url, follow=True)
+        self.assertContains(response, "O organizador foi notificado")
+        self.own_registration.refresh_from_db()
+        cancelled_at = self.own_registration.cancelled_at
+        self.assertEqual(self.own_registration.status, "CANCELED")
+        self.assertIsNotNone(cancelled_at)
+        self.assertEqual(self.owner.notifications.count(), before + 1)
+        self.assertNotContains(response, "Confirmar cancelamento")
+        self.client.post(url)
+        self.own_registration.refresh_from_db()
+        self.assertEqual(self.own_registration.cancelled_at, cancelled_at)
+        self.assertEqual(self.owner.notifications.count(), before + 1)
+        self.assertContains(self.client.get(reverse("home")), "0 de 12 vagas")
+
+    def test_cancel_pending_or_waiting_and_block_started_activity(self):
+        self.client.force_login(self.participant)
+        url = reverse("cancel_registration", args=[self.own_registration.pk])
+        for status in ("PENDING", "WAITLIST"):
+            self.own_registration.status = status
+            self.own_registration.save()
+            self.client.post(url)
+            self.own_registration.refresh_from_db()
+            self.assertEqual(self.own_registration.status, "CANCELED")
+        self.own_registration.status = "APPROVED"
+        self.own_registration.save()
+        self.own_activity.starts_at = timezone.now() - timedelta(hours=1)
+        self.own_activity.confirmation_deadline = timezone.now() - timedelta(hours=2)
+        self.own_activity.save()
+        self.client.post(url)
+        self.own_registration.refresh_from_db()
+        self.assertEqual(self.own_registration.status, "APPROVED")
+        self.assertNotContains(self.client.get(reverse("my_registrations")), "Confirmar cancelamento")
+
+    def test_my_registrations_filter_and_login_required(self):
+        self.assertEqual(self.client.get(reverse("my_registrations")).status_code, 302)
+        self.assertEqual(self.client.post(reverse("cancel_registration", args=[self.own_registration.pk])).status_code, 302)
+        self.client.force_login(self.participant)
+        response = self.client.get(reverse("my_registrations"), {"situacao": "PENDING"})
+        self.assertEqual(len(response.context["page_obj"]), 0)
+        self.assertContains(response, "Nenhuma inscrição")
+        response = self.client.get(reverse("my_registrations"), {"situacao": "INVALID"})
+        self.assertEqual(response.context["selected"], "ALL")
+        self.assertContains(self.client.get(reverse("home")), reverse("my_registrations"))

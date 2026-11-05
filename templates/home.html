@@ -115,16 +115,29 @@
                     {% elif activity.user_registration_status == 'APPROVED' %}
                     <div class="alert alert-success mb-0 text-center" role="status">Inscrição confirmada</div>
                     {% elif activity.user_registration_status == 'WAITLIST' %}
+                    {% if activity.user_seat_offered %}
+                    <a class="btn btn-success w-100" href="{% url 'my_registrations' %}">Vaga disponível! Confirmar participação</a>
+                    {% else %}
                     <div class="alert alert-info mb-0 text-center" role="status">Na lista de espera</div>
+                    {% endif %}
                     {% elif activity.user_registration_status == 'REJECTED' %}
                     <div class="alert alert-danger mb-0 text-center" role="status">Inscrição rejeitada</div>
                     {% elif activity.user_registration_status == 'CANCELED' %}
                     <div class="alert alert-secondary mb-0 text-center" role="status">Inscrição cancelada</div>
+                    {% if activity.accepts_registrations %}
+                    <form action="{% url 'subscribe_activity' activity.pk %}" method="post" class="mt-3">
+                        {% csrf_token %}
+                        {% if activity.registration_type == 'MANUAL' %}<p class="small text-secondary">A nova solicitação precisa ser aprovada pelo organizador.</p>{% endif %}
+                        <button class="btn btn-primary w-100">Inscrever-se novamente</button>
+                    </form>
+                    {% endif %}
+                    {% elif not activity.accepts_registrations %}
+                    <div class="alert alert-secondary mb-0 text-center">Inscrições encerradas</div>
                     {% else %}
                     {% if activity.registration_type == "MANUAL" %}<p class="small text-secondary">A vaga será confirmada após a aprovação do organizador. Você receberá uma notificação.</p>{% endif %}
                     <form action="{% url 'subscribe_activity' activity.id %}" method="POST" class="m-0">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">{% if activity.registration_type == "MANUAL" %}Solicitar inscrição{% else %}Confirmar inscrição{% endif %}</button>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">{% if activity.active_registrations >= activity.max_participants %}Entrar na lista de espera{% elif activity.registration_type == "MANUAL" %}Solicitar inscrição{% else %}Confirmar inscrição{% endif %}</button>
                     </form>
                     {% endif %}
                 </div>

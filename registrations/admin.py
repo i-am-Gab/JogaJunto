@@ -47,7 +47,7 @@ class OrganizerScopedAdminMixin(ClockAdminMixin):
 
 @admin.register(Registration)
 class RegistrationAdmin(OrganizerScopedAdminMixin, admin.ModelAdmin):
-    readonly_fields = ["requested_at", "decided_at", "confirmed_at", "cancelled_at"]
+    readonly_fields = ["requested_at", "decided_at", "confirmed_at", "cancelled_at", "seat_offered_at"]
     organizer_lookup = "activity__organizer"
     participant_lookup = "participant"
     list_display = ["participant", "activity", "status", "requested_at"]
