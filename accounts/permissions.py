@@ -8,31 +8,25 @@ from .models import (
     ROLE_PARTICIPANT,
 )
 
-# Permissões base do participante (apenas leitura do que importa)
-PARTICIPANT_PERMISSIONS = (
-    ("accounts", "view_user"),
-    ("accounts", "change_user"),
-    ("activities", "view_activity"),
-    ("activities", "view_modality"),
-    ("activities", "view_location"),
-    ("registrations", "view_registration"),
-    ("registrations", "view_payment"),
-    ("registrations", "view_attendance"),
-)
+# Participantes usam apenas as telas públicas, sem permissões administrativas.
+PARTICIPANT_PERMISSIONS = ()
 
-# Organizador herda o participante e ganha poder de escrita (apenas nas suas atividades, via admin.py)
-ORGANIZER_PERMISSIONS = PARTICIPANT_PERMISSIONS + (
+ORGANIZER_PERMISSIONS = (
+    ("activities", "view_activity"),
     ("activities", "add_activity"),
     ("activities", "change_activity"),
     ("activities", "delete_activity"),
+    ("activities", "view_modality"),
     ("activities", "add_modality"),
-    ("activities", "change_modality"),
+    ("activities", "view_location"),
     ("activities", "add_location"),
-    ("activities", "change_location"),
+    ("registrations", "view_registration"),
     ("registrations", "add_registration"),
     ("registrations", "change_registration"),
+    ("registrations", "view_payment"),
     ("registrations", "add_payment"),
     ("registrations", "change_payment"),
+    ("registrations", "view_attendance"),
     ("registrations", "add_attendance"),
     ("registrations", "change_attendance"),
 )
@@ -66,12 +60,13 @@ def sync_user_group(user):
     participant, organizer = ensure_access_groups()
     role = user.role or ROLE_PARTICIPANT
 
-    if role == ROLE_ORGANIZER:
-        user.groups.add(organizer)
-        user.groups.remove(participant)
-    else:
-        user.groups.add(participant)
-        user.groups.remove(organizer)
+    is_staff = role == ROLE_ORGANIZER
+    get_user_model().objects.filter(pk=user.pk).update(is_staff=is_staff)
+    user.is_staff = is_staff
+    user.groups.set([organizer if is_staff else participant])
+    user.user_permissions.clear()
+    for attr in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+        user.__dict__.pop(attr, None)
 
     return user
 

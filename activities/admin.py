@@ -1,6 +1,5 @@
 from django.contrib import admin
-from accounts.permissions import promote_to_organizer
-from accounts.models import GROUP_ORGANIZER
+from config.admin_widgets import ClockAdminMixin
 from registrations.models import Registration 
 from .models import Activity, Location, Modality
 
@@ -23,11 +22,10 @@ class PriceFilter(admin.SimpleListFilter):
         return queryset
 
 
-class RegistrationInline(admin.TabularInline):
+class RegistrationInline(ClockAdminMixin, admin.TabularInline):
     model = Registration
     extra = 0
     show_change_link = True
-    autocomplete_fields = ["participant"]
     fields = [
         "participant",
         "status",
@@ -53,7 +51,7 @@ class ModalityAdmin(admin.ModelAdmin):
         return request.user.is_superuser
 
     def has_add_permission(self, request):
-        return request.user.is_superuser
+        return super().has_add_permission(request)
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
@@ -94,14 +92,14 @@ class LocationAdmin(admin.ModelAdmin):
         return request.user.is_superuser
 
     def has_add_permission(self, request):
-        return request.user.is_superuser
+        return super().has_add_permission(request)
 
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
 
 
 @admin.register(Activity)
-class ActivityAdmin(admin.ModelAdmin):
+class ActivityAdmin(ClockAdminMixin, admin.ModelAdmin):
     list_display = [
         "title",
         "organizer",
@@ -153,17 +151,15 @@ class ActivityAdmin(admin.ModelAdmin):
         if getattr(obj, "organizer", None) is None:
             obj.organizer = request.user
         obj.save()
-        if not request.user.is_superuser:
-            promote_to_organizer(request.user)
 
     # Filtra listagem: Admin vê tudo; organizador vê as dele; participante vê as que está inscrito
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        if request.user.groups.filter(name=GROUP_ORGANIZER).exists():
+        if request.user.has_organizer_group():
             return qs.filter(organizer=request.user)
-        return qs.filter(registrations__participant=request.user).distinct()
+        return qs.none()
 
     # Controle de visibilidade do formulário de edição
     def has_view_permission(self, request, obj=None):

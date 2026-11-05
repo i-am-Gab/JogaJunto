@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 
-from accounts.permissions import promote_to_organizer
+from django.core.exceptions import PermissionDenied
 from registrations.models import Registration
 
 from .forms import ActivityForm
@@ -37,8 +37,10 @@ def home(request):
     )
 
 
-@login_required(login_url="/admin/login/")
+@login_required
 def create_activity(request):
+    if not request.user.has_organizer_group():
+        raise PermissionDenied
     if request.method == "POST":
         form = ActivityForm(request.POST)
         if form.is_valid():
@@ -46,7 +48,6 @@ def create_activity(request):
             activity.organizer = request.user
             activity.status = "PUBLISHED"  # Publica direto para facilitar o fluxo
             activity.save()
-            promote_to_organizer(request.user)
             messages.success(request, "Atividade criada com sucesso!")
             return redirect("home")
     else:
@@ -55,7 +56,7 @@ def create_activity(request):
     return render(request, "activity_form.html", {"form": form})
 
 
-@login_required(login_url="/admin/login/")
+@login_required
 def subscribe_activity(request, activity_id):
     activity = get_object_or_404(Activity, id=activity_id, status="PUBLISHED")
 

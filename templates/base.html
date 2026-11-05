@@ -56,6 +56,7 @@
                 </button>
 
                 {% if user.is_authenticated %}
+                {% if user.has_organizer_group %}
                 <a href="{% url 'create_activity' %}"
                     class="btn btn-primary btn-sm fw-bold shadow-sm d-none d-sm-block">
                     <i class="fa-solid fa-plus me-1"></i> Nova Atividade
@@ -66,17 +67,20 @@
                     <i class="fa-solid fa-plus"></i>
                 </a>
 
+                {% endif %}
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle fw-medium" type="button"
                         data-bs-toggle="dropdown">
                         <i class="fa-regular fa-circle-user me-1"></i> {{ user.first_name|default:user.username }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                        {% if user.is_staff and user.has_organizer_group %}
                         <li><a class="dropdown-item fw-medium" href="{% url 'admin:index' %}"><i
                                     class="fa-solid fa-gauge me-2 text-secondary"></i>Painel Admin</a></li>
                         <li>
                             <hr class="dropdown-divider">
                         </li>
+                        {% endif %}
                         <li>
                             <form action="{% url 'logout' %}?next=/" method="post" class="m-0 p-0">
                                 {% csrf_token %}
@@ -87,6 +91,7 @@
                     </ul>
                 </div>
                 {% else %}
+                <a href="{% url 'signup' %}" class="btn btn-primary btn-sm fw-bold">Criar conta</a>
                 <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm fw-bold">Entrar</a>
                 {% endif %}
             </div>

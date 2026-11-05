@@ -87,7 +87,7 @@ class ActivityAdminPermissionTests(ActivityFactoryMixin, TestCase):
 
         queryset = self.admin.get_queryset(self._request(participant))
 
-        self.assertEqual(list(queryset), [joined])
+        self.assertEqual(list(queryset), [])
 
     def test_only_owner_can_change_or_delete_activity(self):
         owner = self.create_user("dono", organizer=True)
@@ -108,9 +108,34 @@ class ActivityAdminPermissionTests(ActivityFactoryMixin, TestCase):
         )
 
 
+class BaseCatalogAdminTests(ActivityFactoryMixin, TestCase):
+    def test_organizer_has_add_links_and_can_open_forms(self):
+        user = self.create_user("catalogo_org", organizer=True)
+        self.client.force_login(user)
+        for model in ("modality", "location"):
+            url = reverse(f"admin:activities_{model}_add")
+            self.assertContains(
+                self.client.get(reverse(f"admin:activities_{model}_changelist")),
+                url,
+            )
+            self.assertEqual(self.client.get(url).status_code, 200)
+        response = self.client.post(reverse("admin:activities_modality_add"), {
+            "name": "Natação", "description": "", "is_active": "on", "_save": "Salvar",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Modality.objects.filter(name="Natação").exists())
+
+    def test_participant_cannot_add_catalog_entries(self):
+        self.client.force_login(self.create_user("catalogo_part"))
+        for model in ("modality", "location"):
+            self.assertEqual(
+                self.client.get(reverse(f"admin:activities_{model}_add")).status_code, 302
+            )
+
+
 class CreateActivityPromotionTests(ActivityFactoryMixin, TestCase):
-    def test_creating_activity_on_site_promotes_user(self):
-        user = self.create_user("novo")
+    def test_organizer_can_create_activity_on_site(self):
+        user = self.create_user("novo", organizer=True)
         self.client.force_login(user)
 
         dates = _future_datetimes()

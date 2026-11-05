@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from activities.views import home, subscribe_activity, create_activity
+from accounts.views import signup
 
 urlpatterns = [
+    path("cadastro/", signup, name="signup"),
     path("admin/", admin.site.urls),
     
     # Rotas nativas de autenticação do Django (Login e Logout para o Front-end)

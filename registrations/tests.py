@@ -2,13 +2,15 @@ from datetime import timedelta
 
 from django.test import RequestFactory, TestCase
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from accounts.models import User
 from accounts.permissions import ensure_access_groups, promote_to_organizer
 from activities.models import Activity, Location, Modality
 
 from .admin import RegistrationAdmin
-from .models import Registration
+from .models import Registration, Payment, Attendance
+from django.urls import reverse
 
 
 class RegistrationAdminScopeTests(TestCase):
@@ -79,9 +81,9 @@ class RegistrationAdminScopeTests(TestCase):
         queryset = self.admin.get_queryset(self._request(self.owner))
         self.assertEqual(list(queryset), [self.own_registration])
 
-    def test_participant_sees_own_registration(self):
+    def test_participant_has_no_admin_queryset(self):
         queryset = self.admin.get_queryset(self._request(self.participant))
-        self.assertEqual(list(queryset), [self.own_registration])
+        self.assertEqual(list(queryset), [])
 
     def test_organizer_cannot_change_registration_of_other_activity(self):
         self.assertTrue(
@@ -94,3 +96,31 @@ class RegistrationAdminScopeTests(TestCase):
                 self._request(self.owner), self.other_registration
             )
         )
+
+    def test_organizer_cannot_read_or_post_other_activity_objects(self):
+        self.client.force_login(self.owner)
+        payment = Payment.objects.create(registration=self.other_registration, amount=10, status="PENDING", method="PIX")
+        attendance = Attendance.objects.create(registration=self.other_registration)
+        for model, obj in (("registration", self.other_registration), ("payment", payment), ("attendance", attendance)):
+            url = reverse(f"admin:registrations_{model}_change", args=[obj.pk])
+            for response in (self.client.get(url), self.client.post(url, {"status": "APPROVED"})):
+                self.assertIn(response.status_code, (302, 403, 404))
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, "PENDING")
+
+    def test_foreign_key_choices_reject_other_organizers_records(self):
+        from django.contrib import admin
+        from .admin import PaymentAdmin, AttendanceAdmin
+        request = self._request(self.owner)
+        for model, admin_class in ((Payment, PaymentAdmin), (Attendance, AttendanceAdmin)):
+            form = admin_class(model, admin.site).get_form(request)()
+            self.assertIn(self.own_registration, form.fields["registration"].queryset)
+            self.assertNotIn(self.other_registration, form.fields["registration"].queryset)
+            with self.assertRaises(ValidationError):
+                form.fields["registration"].clean(self.other_registration.pk)
+        field = self.admin.formfield_for_foreignkey(Registration._meta.get_field("activity"), request)
+        self.assertNotIn(self.other_activity, field.queryset)
+
+    def test_organizer_cannot_see_other_activity_even_as_participant(self):
+        Registration.objects.create(activity=self.other_activity, participant=self.owner)
+        self.assertEqual(list(self.admin.get_queryset(self._request(self.owner))), [self.own_registration])

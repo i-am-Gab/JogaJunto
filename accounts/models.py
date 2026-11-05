@@ -34,4 +34,4 @@ class User(AbstractUser):
     def has_organizer_group(self):
         if self.is_superuser:
             return True
-        return self.groups.filter(name=GROUP_ORGANIZER).exists()
+        return self.role == ROLE_ORGANIZER
