@@ -54,6 +54,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "registrations.context_processors.notifications",
             ],
         },
     },
@@ -136,6 +137,7 @@ MAILERS = {
 AUTH_USER_MODEL = "accounts.User"
 
 JAZZMIN_SETTINGS = {
+    "custom_css": "css/admin.css",
     "site_title": "JogaJunto Admin",
     "site_header": "JogaJunto",
     "site_brand": "JogaJunto",
@@ -145,6 +147,7 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
         {"name": "Início", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Ver Site", "url": "/"},
+        {"name": "Solicitações de inscrição", "url": "review_registrations", "permissions": ["registrations.change_registration"]},
     ],
     "show_sidebar": True,
     "navigation_expanded": True,
@@ -166,7 +169,7 @@ JAZZMIN_SETTINGS = {
 
 JAZZMIN_UI_TWEAKS = {
     "theme": "flatly",  # Tema Bootstrap moderno
-    "dark_mode_theme": "darkly",
+    "default_theme_mode": "auto",
 }
 
 LOGIN_URL = 'login'

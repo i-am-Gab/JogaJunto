@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Notificações — JogaJunto{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 800px">
+    <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
+        <div><h1 class="h3 fw-bold mb-1">Notificações</h1><p class="text-secondary mb-0">Acompanhe suas inscrições e as decisões do organizador.</p></div>
+        {% if unread_notifications %}<form method="post" action="{% url 'read_all_notifications' %}">{% csrf_token %}<button class="btn btn-outline-primary btn-sm">Marcar todas como lidas</button></form>{% endif %}
+    </div>
+    {% for notification in page_obj %}
+    <article class="card mb-3 {% if not notification.read_at %}border-primary{% endif %}">
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 justify-content-between mb-2">
+                <time class="small text-secondary" datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'d/m/Y H:i' }}</time>
+                {% if not notification.read_at %}<span class="badge bg-primary">Não lida</span>{% else %}<span class="small text-secondary">Lida</span>{% endif %}
+            </div>
+            <p>{{ notification.message }}</p>
+            <div class="d-flex flex-wrap gap-2">
+                {% if notification.registration %}
+                {% if user.has_organizer_group and notification.registration.activity.organizer_id == user.id %}
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'review_registrations' %}?situacao=ALL&amp;atividade={{ notification.registration.activity_id }}#inscricao-{{ notification.registration_id }}">Ver solicitações da atividade</a>
+                {% endif %}
+                {% endif %}
+                {% if not notification.read_at %}<form method="post" action="{% url 'read_notification' notification.id %}">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm">Marcar como lida</button></form>{% endif %}
+            </div>
+        </div>
+    </article>
+    {% empty %}<div class="card p-4 text-center"><h2 class="h5">Nenhuma notificação por enquanto</h2><p class="text-secondary mb-0">As novidades sobre suas inscrições aparecerão aqui.</p></div>{% endfor %}
+    {% if page_obj.has_other_pages %}<nav aria-label="Páginas de notificações" class="d-flex justify-content-between align-items-center gap-2">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline-secondary">Anterior</a>{% endif %}
+        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline-secondary">Próxima</a>{% endif %}
+    </nav>{% endif %}
+</div>
+{% endblock %}

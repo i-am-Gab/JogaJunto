@@ -1,0 +1,8 @@
+<div class="jj-datetime">
+    {% for subwidget in widget.subwidgets %}
+    <label class="jj-datetime-part">
+        <span>{% if forloop.first %}Data{% else %}Horário{% endif %}</span>
+        {% include subwidget.template_name with widget=subwidget %}
+    </label>
+    {% endfor %}
+</div>

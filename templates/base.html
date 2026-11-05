@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-br" data-bs-theme="light">
 
 <head>
@@ -32,14 +33,15 @@
             font-size: 0.85rem;
         }
     </style>
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
 
     <!-- Navbar Corrigida -->
-    <nav class="navbar navbar-expand bg-body-tertiary shadow-sm py-3 border-bottom">
-        <div class="container">
+    <nav class="navbar navbar-expand-md bg-body-tertiary shadow-sm py-3 border-bottom">
+        <div class="container flex-wrap gap-3">
             <!-- Logo -->
             <a class="navbar-brand text-primary d-flex align-items-center" href="{% url 'home' %}">
                 <i class="fa-solid fa-person-running me-2 fs-4"></i>
@@ -47,16 +49,21 @@
             </a>
 
             <!-- Menu Lado Direito -->
-            <div class="d-flex align-items-center gap-3 ms-auto">
+            <div class="d-flex flex-wrap align-items-center gap-2 ms-auto">
 
                 <!-- Botão de Troca de Tema -->
-                <button class="btn btn-light border btn-sm text-secondary rounded-circle" id="themeToggle" type="button"
+                <button class="btn btn-light border btn-sm text-secondary rounded-circle" id="themeToggle" type="button" aria-label="Alternar tema"
                     style="width: 35px; height: 35px;">
                     <i class="fa-solid fa-moon" id="themeIcon"></i>
                 </button>
 
                 {% if user.is_authenticated %}
+                <a href="{% url 'notifications' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-regular fa-bell" aria-hidden="true"></i> Notificações
+                    {% if unread_notifications %}<span class="badge bg-danger">{{ unread_notifications }}<span class="visually-hidden"> não lidas</span></span>{% endif %}
+                </a>
                 {% if user.has_organizer_group %}
+                <a href="{% url 'review_registrations' %}" class="btn btn-outline-primary btn-sm">Solicitações</a>
                 <a href="{% url 'create_activity' %}"
                     class="btn btn-primary btn-sm fw-bold shadow-sm d-none d-sm-block">
                     <i class="fa-solid fa-plus me-1"></i> Nova Atividade
@@ -101,6 +108,9 @@
     <!-- Conteúdo Dinâmico -->
     <main class="py-4">
         <div class="container">
+            {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags|default:'info' }}{% endif %}" role="alert">{{ message }}</div>
+            {% endfor %}
             {% block content %}{% endblock %}
         </div>
     </main>

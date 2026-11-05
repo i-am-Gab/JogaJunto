@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Solicitações de inscrição — JogaJunto{% endblock %}
+{% block content %}
+<div class="review-page mx-auto">
+    <a href="{% url 'home' %}" class="text-decoration-none small">← Voltar às atividades</a>
+    <header class="my-4">
+        <p class="text-primary fw-semibold small mb-2">ÁREA DO ORGANIZADOR</p>
+        <h1 class="h2 fw-bold">Solicitações de inscrição</h1>
+        <p class="text-secondary">Confira quem quer participar, aprove ou rejeite. O participante recebe uma notificação com sua decisão.</p>
+    </header>
+    <form method="get" class="card card-body mb-4">
+        <label for="activity-filter" class="form-label fw-semibold">Filtrar por atividade</label>
+        <div class="d-flex flex-wrap gap-2">
+            <select name="atividade" id="activity-filter" class="form-select flex-grow-1" style="flex-basis: 240px">
+                <option value="">Todas as minhas atividades</option>
+                {% for activity in activities %}<option value="{{ activity.pk }}" {% if activity_id == activity.pk|stringformat:'s' %}selected{% endif %}>{{ activity.title }}</option>{% endfor %}
+            </select>
+            <input type="hidden" name="situacao" value="{{ selected }}">
+            <button class="btn btn-outline-primary">Filtrar</button>
+        </div>
+    </form>
+    <nav class="d-flex gap-2 flex-wrap mb-4" aria-label="Situação das inscrições">
+        {% for tab in tabs %}<a href="?situacao={{ tab.value }}&amp;atividade={{ activity_id }}" class="btn {% if selected == tab.value %}btn-primary{% else %}btn-outline-secondary{% endif %}" {% if selected == tab.value %}aria-current="page"{% endif %}>{{ tab.label }} <span class="badge {% if selected == tab.value %}bg-light text-primary{% else %}bg-secondary{% endif %} ms-1">{{ tab.count }}</span></a>{% endfor %}
+    </nav>
+    {% for registration in page_obj %}
+    <article id="inscricao-{{ registration.pk }}" class="card mb-3 border-0 shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+                <div><h2 class="h5 fw-bold mb-1">{{ registration.participant }}</h2><span class="text-secondary small">@{{ registration.participant.username }} · Solicitou em {{ registration.requested_at|date:'d/m/Y H:i' }}</span></div>
+                <span class="align-self-start badge {% if registration.status == 'PENDING' %}bg-warning text-dark{% elif registration.status == 'APPROVED' %}bg-success{% elif registration.status == 'REJECTED' %}bg-danger{% else %}bg-secondary{% endif %}">{% if registration.status == 'PENDING' %}Aguardando sua decisão{% else %}{{ registration.get_status_display }}{% endif %}</span>
+            </div>
+            <div class="bg-body-tertiary border rounded-3 p-3 mb-3">
+                <p class="fw-semibold mb-1">{{ registration.activity.title }}</p>
+                <p class="small text-secondary mb-0">{{ registration.activity.starts_at|date:'d/m/Y' }} às {{ registration.activity.starts_at|date:'H:i' }} · {{ registration.activity.location }}</p>
+            </div>
+            {% include 'registrations/controls.html' %}
+            <form id="registration-action-{{ registration.pk }}" method="post" action="{% url 'decide_registration' registration.pk %}">{% csrf_token %}</form>
+        </div>
+    </article>
+    {% empty %}<div class="card text-center p-5"><h2 class="h5">{% if selected == 'PENDING' %}Tudo em dia!{% else %}Nenhuma inscrição nesta seleção{% endif %}</h2><p class="text-secondary mb-0">{% if selected == 'PENDING' %}Não há solicitações aguardando sua aprovação.{% else %}Escolha outra situação ou atividade para consultar.{% endif %}</p></div>{% endfor %}
+    {% if page_obj.has_other_pages %}<nav class="d-flex justify-content-between gap-3 mt-4" aria-label="Páginas de solicitações">
+        {% if page_obj.has_previous %}<a href="?situacao={{ selected }}&amp;atividade={{ activity_id }}&amp;page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?situacao={{ selected }}&amp;atividade={{ activity_id }}&amp;page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+    </nav>{% endif %}
+</div>
+{% endblock %}

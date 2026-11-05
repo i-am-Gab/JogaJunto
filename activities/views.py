@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
+from django.db import IntegrityError, transaction
+from django.views.decorators.http import require_POST
 
 from django.core.exceptions import PermissionDenied
 from registrations.models import Registration
@@ -24,17 +26,13 @@ def home(request):
         .order_by("starts_at")
     )
 
-    user_registrations = []
+    registrations = {}
     if request.user.is_authenticated:
-        user_registrations = Registration.objects.filter(
-            participant=request.user
-        ).values_list("activity_id", flat=True)
+        registrations = dict(Registration.objects.filter(participant=request.user).values_list("activity_id", "status"))
+    for activity in activities:
+        activity.user_registration_status = registrations.get(activity.pk)
+    return render(request, "home.html", {"activities": activities})
 
-    return render(
-        request,
-        "home.html",
-        {"activities": activities, "user_registrations": user_registrations},
-    )
 
 
 @login_required
@@ -57,6 +55,7 @@ def create_activity(request):
 
 
 @login_required
+@require_POST
 def subscribe_activity(request, activity_id):
     activity = get_object_or_404(Activity, id=activity_id, status="PUBLISHED")
 
@@ -79,13 +78,15 @@ def subscribe_activity(request, activity_id):
         initial_status = (
             "APPROVED" if activity.registration_type == "AUTO" else "PENDING"
         )
-        Registration.objects.create(
-            activity=activity, participant=request.user, status=initial_status
-        )
-        messages.success(
-            request, f"Inscrição realizada com sucesso em {activity.title}!"
-        )
-    except Exception as e:
+        with transaction.atomic():
+            Registration.objects.create(
+                activity=activity, participant=request.user, status=initial_status
+            )
+        if initial_status == "PENDING":
+            messages.info(request, f"Inscrição em {activity.title} pendente de aprovação do organizador.")
+        else:
+            messages.success(request, f"Inscrição confirmada em {activity.title}!")
+    except IntegrityError:
         messages.error(request, "Você já possui uma inscrição para esta atividade.")
 
     return redirect("home")

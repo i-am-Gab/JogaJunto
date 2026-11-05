@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 
 
 class Modality(models.Model):
@@ -54,22 +56,30 @@ class Activity(models.Model):
     organizer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="organized_activities",
+        related_name="organized_activities", verbose_name="Organizador",
     )
     modality = models.ForeignKey(
-        Modality, on_delete=models.PROTECT, related_name="activities"
+        Modality, on_delete=models.PROTECT, related_name="activities", verbose_name="Modalidade"
     )
     location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="activities"
+        Location, on_delete=models.PROTECT, related_name="activities", verbose_name="Local"
     )
 
     title = models.CharField("Título", max_length=200)
     description = models.TextField("Descrição")
     starts_at = models.DateTimeField("Início")
     ends_at = models.DateTimeField("Término")
-    max_participants = models.PositiveIntegerField("Limite de Participantes")
-    price = models.DecimalField("Valor", max_digits=10, decimal_places=2, default=0.00)
-    confirmation_deadline = models.DateTimeField("Prazo de Confirmação")
+    max_participants = models.PositiveIntegerField(
+        "Limite de Participantes", validators=[MinValueValidator(1, message="Informe pelo menos uma vaga.")]
+    )
+    price = models.DecimalField(
+        "Valor", max_digits=10, decimal_places=2, default=0.00,
+        validators=[MinValueValidator(0, message="O valor não pode ser negativo.")],
+    )
+    confirmation_deadline = models.DateTimeField(
+        "Prazo de Confirmação",
+        help_text="Data e horário limite para confirmar a participação. Deve ser anterior ao início da atividade.",
+    )
     registration_type = models.CharField(
         "Tipo de Inscrição", max_length=20, choices=REGISTRATION_CHOICES, default="AUTO"
     )
@@ -77,8 +87,18 @@ class Activity(models.Model):
         "Status", max_length=20, choices=STATUS_CHOICES, default="DRAFT"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField("Criada em", auto_now_add=True)
+    updated_at = models.DateTimeField("Atualizada em", auto_now=True)
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
+            errors["ends_at"] = "O término deve ser depois do início da atividade. Confira a data e o horário."
+        if self.starts_at and self.confirmation_deadline and self.confirmation_deadline >= self.starts_at:
+            errors["confirmation_deadline"] = "O prazo de confirmação deve ser antes do início da atividade. Confira a data e o horário."
+        if errors:
+            raise ValidationError(errors)
 
     class Meta:
         verbose_name = "Atividade"

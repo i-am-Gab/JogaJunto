@@ -2,6 +2,7 @@ from django.contrib import admin
 from config.admin_widgets import ClockAdminMixin
 from registrations.models import Registration 
 from .models import Activity, Location, Modality
+from django.template.loader import render_to_string
 
 
 class PriceFilter(admin.SimpleListFilter):
@@ -25,16 +26,18 @@ class PriceFilter(admin.SimpleListFilter):
 class RegistrationInline(ClockAdminMixin, admin.TabularInline):
     model = Registration
     extra = 0
-    show_change_link = True
-    fields = [
-        "participant",
-        "status",
-        "requested_at",
-        "decided_at",
-        "confirmed_at",
-        "organizer_notes",
-    ]
-    readonly_fields = ["requested_at"]
+    fields = ["participant", "status", "management"]
+    readonly_fields = fields
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Aprovação e informações")
+    def management(self, obj):
+        return render_to_string("registrations/controls.html", {
+            "registration": obj,
+        })
 
 
 @admin.register(Modality)
@@ -100,6 +103,13 @@ class LocationAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(ClockAdminMixin, admin.ModelAdmin):
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        extra_context = dict(extra_context or {})
+        activity = self.get_object(request, object_id)
+        if activity and self.has_change_permission(request, activity):
+            extra_context["approval_registrations"] = activity.registrations.select_related("participant")
+        return super().change_view(request, object_id, form_url, extra_context)
+
     list_display = [
         "title",
         "organizer",

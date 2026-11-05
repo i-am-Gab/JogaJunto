@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class Registration(models.Model):
@@ -12,10 +13,10 @@ class Registration(models.Model):
     )
 
     activity = models.ForeignKey(
-        "activities.Activity", on_delete=models.CASCADE, related_name="registrations"
+        "activities.Activity", on_delete=models.CASCADE, related_name="registrations", verbose_name="Atividade"
     )
     participant = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="registrations"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="registrations", verbose_name="Participante"
     )
     status = models.CharField(
         "Status", max_length=20, choices=STATUS_CHOICES, default="PENDING"
@@ -26,6 +27,26 @@ class Registration(models.Model):
     confirmed_at = models.DateTimeField("Confirmado em", blank=True, null=True)
     cancelled_at = models.DateTimeField("Cancelado em", blank=True, null=True)
     organizer_notes = models.TextField("Notas do Organizador", blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        if update_fields is None or "status" in update_fields:
+            previous = type(self).objects.filter(pk=self.pk).values_list("status", flat=True).first() if self.pk else None
+            changed_fields = set()
+            if previous != self.status:
+                now = timezone.now()
+                if self.status in ("APPROVED", "REJECTED"):
+                    self.decided_at = now
+                    changed_fields.add("decided_at")
+                if self.status == "APPROVED":
+                    self.confirmed_at = now
+                    changed_fields.add("confirmed_at")
+                if self.status == "CANCELED":
+                    self.cancelled_at = now
+                    changed_fields.add("cancelled_at")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | changed_fields
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Inscrição"
@@ -43,13 +64,13 @@ class Registration(models.Model):
 
 class Payment(models.Model):
     registration = models.OneToOneField(
-        Registration, on_delete=models.CASCADE, related_name="payment"
+        Registration, on_delete=models.CASCADE, related_name="payment", verbose_name="Inscrição"
     )
     amount = models.DecimalField("Valor Pago", max_digits=10, decimal_places=2)
     status = models.CharField("Status", max_length=50)
     method = models.CharField("Método de Pagamento", max_length=50)
     paid_at = models.DateTimeField("Pago em", blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField("Criado em", auto_now_add=True)
 
     class Meta:
         verbose_name = "Pagamento"
@@ -61,10 +82,10 @@ class Payment(models.Model):
 
 class Attendance(models.Model):
     registration = models.OneToOneField(
-        Registration, on_delete=models.CASCADE, related_name="attendance"
+        Registration, on_delete=models.CASCADE, related_name="attendance", verbose_name="Inscrição"
     )
     attended = models.BooleanField("Presente", default=False)
-    check_in_at = models.DateTimeField("Check-in em", blank=True, null=True)
+    check_in_at = models.DateTimeField("Entrada registrada em", blank=True, null=True)
     notes = models.TextField("Observações", blank=True, null=True)
 
     class Meta:
@@ -73,3 +94,16 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"Presença: {self.registration}"
+
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications", verbose_name="Destinatário")
+    registration = models.ForeignKey(Registration, on_delete=models.SET_NULL, null=True, related_name="notifications", verbose_name="Inscrição")
+    message = models.TextField("Mensagem")
+    created_at = models.DateTimeField("Criada em", auto_now_add=True)
+    read_at = models.DateTimeField("Lida em", null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        verbose_name = "Notificação"
+        verbose_name_plural = "Notificações"

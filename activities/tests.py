@@ -146,13 +146,11 @@ class CreateActivityPromotionTests(ActivityFactoryMixin, TestCase):
                 "description": "Grupo de ciclismo",
                 "modality": self.modality.pk,
                 "location": self.location.pk,
-                "starts_at": dates["starts_at"].strftime("%Y-%m-%dT%H:%M"),
-                "ends_at": dates["ends_at"].strftime("%Y-%m-%dT%H:%M"),
+                **{f"{name}_{part}": timezone.localtime(value).strftime(fmt)
+                   for name, value in dates.items()
+                   for part, fmt in ((0, "%Y-%m-%d"), (1, "%H:%M"))},
                 "max_participants": 8,
                 "price": "0.00",
-                "confirmation_deadline": dates["confirmation_deadline"].strftime(
-                    "%Y-%m-%dT%H:%M"
-                ),
                 "registration_type": "AUTO",
             },
         )
@@ -161,3 +159,63 @@ class CreateActivityPromotionTests(ActivityFactoryMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(user.has_organizer_group())
         self.assertTrue(Activity.objects.filter(title="Pedal da manha").exists())
+
+
+class ActivityValidationTests(ActivityFactoryMixin, TestCase):
+    def setUp(self):
+        self.owner = self.create_user("validacao", organizer=True)
+        self.activity = self.create_activity(self.owner)
+
+    def payload(self, admin=False):
+        dates = {name: getattr(self.activity, name) for name in ("starts_at", "ends_at", "confirmation_deadline")}
+        data = {
+            "title": "Teste de validação", "description": "Atividade de teste",
+            "modality": self.modality.pk, "location": self.location.pk,
+            "max_participants": 10, "price": "0.00", "registration_type": "AUTO", "status": "PUBLISHED",
+        }
+        for name, value in dates.items():
+            value = timezone.localtime(value).replace(microsecond=0)
+            if admin:
+                data[f"{name}_0"] = value.strftime("%d/%m/%Y")
+                data[f"{name}_1"] = value.strftime("%H:%M:%S")
+            else:
+                data[f"{name}_0"] = value.strftime("%Y-%m-%d")
+                data[f"{name}_1"] = value.strftime("%H:%M:%S")
+        if admin:
+            data.update({"registrations-TOTAL_FORMS": "0", "registrations-INITIAL_FORMS": "0"})
+        return data
+
+    def test_invalid_deadline_is_attached_to_field_in_site_and_admin(self):
+        self.client.force_login(self.owner)
+        for admin in (False, True):
+            for delta in (timedelta(0), timedelta(hours=1)):
+                self.activity.confirmation_deadline = self.activity.starts_at + delta
+                data = self.payload(admin)
+                url = reverse("admin:activities_activity_add") if admin else reverse("create_activity")
+                response = self.client.post(url, data)
+                self.assertEqual(response.status_code, 200)
+                form = response.context["adminform"].form if admin else response.context["form"]
+                self.assertIn("confirmation_deadline", form.errors)
+                self.assertContains(response, "O prazo de confirmação deve ser antes do início")
+                self.assertNotContains(response, "check_deadline_before_starts")
+                self.assertEqual(form["title"].value(), data["title"])
+        self.assertFalse(Activity.objects.filter(title="Teste de validação").exists())
+
+    def test_other_invalid_values_have_field_errors(self):
+        from .forms import ActivityForm
+        data = self.payload()
+        data.update({"ends_at_0": data["starts_at_0"], "ends_at_1": data["starts_at_1"], "max_participants": "0", "price": "-1"})
+        form = ActivityForm(data)
+        self.assertFalse(form.is_valid())
+        for name in ("ends_at", "max_participants", "price"):
+            self.assertIn(name, form.errors)
+        self.assertNotIn("__all__", form.errors)
+
+    def test_valid_deadline_saves_in_both_forms(self):
+        self.client.force_login(self.owner)
+        for admin in (False, True):
+            data = self.payload(admin)
+            data["title"] = f"Atividade válida {admin}"
+            response = self.client.post(reverse("admin:activities_activity_add") if admin else reverse("create_activity"), data)
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(Activity.objects.filter(title=data["title"]).exists())

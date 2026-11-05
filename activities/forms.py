@@ -1,5 +1,6 @@
 from django import forms
 from .models import Activity
+from config.admin_widgets import ClockSplitDateTime
 
 
 class ActivityForm(forms.ModelForm):
@@ -9,6 +10,8 @@ class ActivityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["modality"].empty_label = "Selecione uma modalidade"
+        self.fields["location"].empty_label = "Selecione um local"
         # Adiciona a classe do Bootstrap em todos os campos automaticamente
         for field in self.fields.values():
             if isinstance(field.widget, forms.CheckboxInput):
@@ -20,19 +23,11 @@ class ActivityForm(forms.ModelForm):
                     else "form-control"
                 )
 
-        # O formato exato que o HTML5 exige para não limpar o campo em caso de erro
-        html5_date_format = '%Y-%m-%dT%H:%M'
-
-        # Transforma os campos de data no calendário nativo do navegador
-        self.fields["starts_at"].widget = forms.DateTimeInput(
-            format=html5_date_format,
-            attrs={"type": "datetime-local", "class": "form-control"}
-        )
-        self.fields["ends_at"].widget = forms.DateTimeInput(
-            format=html5_date_format,
-            attrs={"type": "datetime-local", "class": "form-control"}
-        )
-        self.fields["confirmation_deadline"].widget = forms.DateTimeInput(
-            format=html5_date_format,
-            attrs={"type": "datetime-local", "class": "form-control"}
-        )
+        for name in ("starts_at", "ends_at", "confirmation_deadline"):
+            original = self.fields[name]
+            self.fields[name] = forms.SplitDateTimeField(
+                label=original.label, help_text=original.help_text,
+                widget=ClockSplitDateTime(),
+                error_messages={"invalid_date": "Informe uma data válida.", "invalid_time": "Informe um horário válido."},
+            )
+        self.fields["registration_type"].help_text = "Automática: a vaga é confirmada na inscrição. Mediante aprovação: você analisa a solicitação antes de confirmar a vaga."

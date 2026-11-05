@@ -1,0 +1,23 @@
+<div class="registration-controls">
+    {% if registration.status == 'PENDING' %}
+    <button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="APPROVED" class="btn btn-success">Aprovar inscrição</button>
+    {% endif %}
+    <details class="registration-details">
+        <summary>Ver informações</summary>
+        <div class="registration-details-body">
+            <dl class="registration-dates">
+                <div><dt>Solicitada em</dt><dd>{{ registration.requested_at|date:'d/m/Y H:i' }}</dd></div>
+                <div><dt>{% if registration.status == 'APPROVED' %}Aprovada em{% else %}Analisada em{% endif %}</dt><dd>{{ registration.decided_at|date:'d/m/Y H:i'|default:'Ainda não registrada' }}</dd></div>
+                <div><dt>Confirmada em</dt><dd>{{ registration.confirmed_at|date:'d/m/Y H:i'|default:'Ainda não confirmada' }}</dd></div>
+            </dl>
+            <p class="registration-hint">As datas são registradas automaticamente ao aprovar a inscrição.</p>
+            <label for="notes-{{ registration.pk }}">Notas do organizador</label>
+            <textarea id="notes-{{ registration.pk }}" name="organizer_notes" form="registration-action-{{ registration.pk }}" class="form-control" rows="3" placeholder="Adicione observações internas sobre esta inscrição">{{ registration.organizer_notes|default:'' }}</textarea>
+            <p class="registration-hint">Notas internas, visíveis apenas ao organizador e aos administradores.</p>
+            <div class="registration-secondary-actions">
+                <button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="SAVE_NOTES" class="btn btn-outline-primary">Salvar notas</button>
+                {% if registration.status == 'PENDING' %}<button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="REJECTED" class="btn btn-outline-danger">Rejeitar inscrição</button>{% endif %}
+            </div>
+        </div>
+    </details>
+</div>

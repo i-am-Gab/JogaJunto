@@ -38,20 +38,6 @@
     </div>
 </div>
 
-<!-- Sistema de Alertas do Django -->
-{% if messages %}
-<div class="row mb-4">
-    <div class="col-12">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0" role="alert">
-            <i class="fa-solid fa-circle-info me-2"></i> {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
 <!-- Grid de Cards de Atividades -->
 <div class="row g-4">
     {% for activity in activities %}
@@ -60,7 +46,7 @@
             <div class="card-body d-flex flex-column p-4">
 
                 <!-- Cabeçalho do Card (Modalidade e Preço) -->
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
                     <span
                         class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill badge-modalidade">
                         <i class="fa-solid fa-tag me-1"></i> {{ activity.modality.name }}
@@ -123,16 +109,22 @@
                     {% if not user.is_authenticated %}
                     <a href="{% url 'login' %}?next=/" class="btn btn-outline-primary w-100 py-2 fw-bold">Entrar para Participar</a>
                     {% elif user == activity.organizer %}
-                    <button class="btn btn-light w-100 py-2 border text-secondary fw-bold" disabled>Sua
-                        Atividade</button>
-                    {% elif activity.id in user_registrations %}
-                    <button class="btn btn-success w-100 py-2 fw-bold" disabled><i
-                            class="fa-solid fa-circle-check me-2"></i>Inscrição Confirmada</button>
+                    <a class="btn btn-outline-primary w-100 py-2 fw-bold" href="{% url 'review_registrations' %}?atividade={{ activity.pk }}">Gerenciar inscrições</a>
+                    {% elif activity.user_registration_status == 'PENDING' %}
+                    <div class="alert alert-warning mb-0 text-center" role="status">Pendente de aprovação</div>
+                    {% elif activity.user_registration_status == 'APPROVED' %}
+                    <div class="alert alert-success mb-0 text-center" role="status">Inscrição confirmada</div>
+                    {% elif activity.user_registration_status == 'WAITLIST' %}
+                    <div class="alert alert-info mb-0 text-center" role="status">Na lista de espera</div>
+                    {% elif activity.user_registration_status == 'REJECTED' %}
+                    <div class="alert alert-danger mb-0 text-center" role="status">Inscrição rejeitada</div>
+                    {% elif activity.user_registration_status == 'CANCELED' %}
+                    <div class="alert alert-secondary mb-0 text-center" role="status">Inscrição cancelada</div>
                     {% else %}
+                    {% if activity.registration_type == "MANUAL" %}<p class="small text-secondary">A vaga será confirmada após a aprovação do organizador. Você receberá uma notificação.</p>{% endif %}
                     <form action="{% url 'subscribe_activity' activity.id %}" method="POST" class="m-0">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">Garantir
-                            Vaga</button>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">{% if activity.registration_type == "MANUAL" %}Solicitar inscrição{% else %}Confirmar inscrição{% endif %}</button>
                     </form>
                     {% endif %}
                 </div>
@@ -144,7 +136,7 @@
     <div class="col-12 text-center py-5 mt-4">
         <div class="bg-body-tertiary rounded-4 p-5 d-inline-block shadow-sm">
             <i class="fa-solid fa-map-location-dot fs-1 text-primary mb-3 opacity-50"></i>
-            <h4 class="h5 fw-bold mb-2">O feed está vazio</h4>
+            <h4 class="h5 fw-bold mb-2">Nenhuma atividade disponível</h4>
             <p class="text-secondary mb-0">Seja o primeiro a organizar uma atividade ou aguarde novas publicações.</p>
         </div>
     </div>

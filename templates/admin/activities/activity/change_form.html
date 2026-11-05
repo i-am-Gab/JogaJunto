@@ -1,0 +1,9 @@
+{% extends 'admin/change_form.html' %}
+{% block content %}
+{{ block.super }}
+{% for registration in approval_registrations %}
+<form id="registration-action-{{ registration.pk }}" action="{% url 'decide_registration' registration.pk %}" method="post">
+    {% csrf_token %}<input type="hidden" name="source" value="activity">
+</form>
+{% endfor %}
+{% endblock %}
