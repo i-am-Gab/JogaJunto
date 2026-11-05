@@ -1,399 +1,229 @@
 # JogaJunto
 
-Aplicação web desenvolvida com **Django** para criação, divulgação e gerenciamento de atividades físicas coletivas, como corrida, caminhada, ciclismo, futebol, entre outras.
+Aplicação web para criação, divulgação e gerenciamento de atividades físicas coletivas, desenvolvida para a disciplina **GAC116 - Programação Web**, da Universidade Federal de Lavras (UFLA).
 
-O sistema permite que organizadores cadastrem atividades e controlem inscrições, enquanto participantes podem consultar atividades disponíveis, solicitar participação e acompanhar o status de suas inscrições.
+Organizadores cadastram atividades e gerenciam inscrições. Participantes consultam atividades publicadas, solicitam participação e acompanham inscrições e notificações.
 
-## 👥 Integrantes
+## Integrantes
 
-- **Gabriel Aguiar Alves e Silva**
-- **Ronan Gustavo Carleto**
-- **Marco Antonio Maia**
+- Gabriel Aguiar Alves e Silva
+- Ronan Gustavo Carleto
+- Marco Antonio Maia
 
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias
 
-<p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" alt="Python" title="Python" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/django/django-plain.svg" alt="Django" title="Django" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" alt="HTML5" title="HTML5" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" alt="CSS3" title="CSS3" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" alt="JavaScript" title="JavaScript" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bootstrap/bootstrap-original.svg" alt="Bootstrap" title="Bootstrap" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sqlite/sqlite-original.svg" alt="SQLite" title="SQLite" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" alt="Git" title="Git" width="50" height="50" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" alt="GitHub" title="GitHub" width="50" height="50" />
-</p>
+- Python e Django 6.1.2, com arquitetura MVT (models, views e templates).
+- SQLite como banco de dados relacional e migrations do Django para evolução do esquema.
+- HTML, CSS, JavaScript e Bootstrap 5.3.2 na interface.
+- Django Admin com Jazzmin 3.0.5 e CSS personalizado.
+- python-dotenv para leitura de variáveis de ambiente.
+- Git e GitHub para versionamento.
 
-<p align="center">
-  <strong>Python • Django • HTML5 • CSS3 • JavaScript • Bootstrap • SQLite • Git • GitHub</strong>
-</p>
+## Funcionalidades implementadas
 
-## 📌 Sobre o Projeto
+### Autenticação e perfis
 
-O projeto tem como objetivo facilitar a organização de atividades físicas em grupo, centralizando em um único ambiente informações sobre eventos, inscrições, participantes, pagamentos e presença.
-
-Cada atividade poderá possuir informações como:
-
-- modalidade;
-- local;
-- data e horário de início e término;
-- limite de participantes;
-- valor da atividade;
-- prazo para confirmação;
-- tipo de inscrição;
-- status da atividade.
-
-As inscrições poderão ocorrer de forma **automática** ou **mediante aprovação do organizador**.
-
-Quando necessário, o sistema também permitirá o registro de pagamentos e o controle de presença dos participantes.
-
-## ⚙️ Principais Funcionalidades
-
-### Usuários
-
-- Cadastro e autenticação de usuários;
-- Perfis de participante e organizador;
-- Controle de acesso de acordo com o tipo de usuário;
-- Área administrativa protegida.
+- Cadastro público de participantes, login por usuário e senha e logout.
+- Cadastro público não permite escolher privilégios de organizador ou administrador.
+- Participante: acessa suas inscrições e notificações nas telas do site; não acessa o Admin.
+- Organizador: cria atividades e gerencia suas atividades, inscrições, pagamentos e presenças no Admin; também possui uma tela de análise de inscrições.
+- Superusuário: acesso administrativo geral, incluindo gerenciamento de usuários e perfis.
+- Grupos e permissões sincronizados conforme o perfil do usuário.
 
 ### Atividades
 
-- Cadastro de atividades físicas;
-- Consulta, edição e exclusão de atividades;
-- Associação de modalidade e local;
-- Definição de data e horário;
-- Definição do limite de participantes;
-- Atividades gratuitas ou pagas;
-- Prazo para confirmação;
-- Inscrição automática ou mediante aprovação;
-- Controle do status da atividade.
+- Listagem pública de atividades publicadas, com modalidade, local, horário, valor e disponibilidade.
+- Criação de atividades pela tela do organizador; nessa tela, a atividade é publicada diretamente.
+- Cadastro, consulta, edição e exclusão de atividades pelo Admin, respeitando as permissões.
+- Modalidades e locais gerenciados pelo Admin. Organizadores podem cadastrar esses registros; sua edição e exclusão ficam restritas ao superusuário.
+- Atividades gratuitas ou pagas, com limite de vagas, prazo de confirmação e inscrição automática ou mediante aprovação.
+- Estados: rascunho, publicada, cancelada e finalizada.
 
-### Inscrições
+### Inscrições, lista de espera e notificações
 
-- Solicitação de participação em atividades;
-- Aprovação ou rejeição de inscrições;
-- Lista de espera;
-- Cancelamento de inscrição;
-- Acompanhamento do status pelo participante;
-- Impedimento de inscrições duplicadas na mesma atividade.
+- Inscrição autenticada, automática ou sujeita à aprovação do organizador.
+- Área “Minhas inscrições” com filtros por situação, contagens e paginação.
+- Aprovação, rejeição e notas do organizador na tela de análise de inscrições.
+- Cancelamento pelo participante antes do início de uma atividade publicada e nova solicitação para inscrições canceladas, enquanto o prazo permitir.
+- Lista de espera quando as vagas estão ocupadas, com oferta de vaga por ordem de solicitação e confirmação pelo participante.
+- Notificações internas sobre inscrições e oferta de vagas, com marcação individual ou conjunta como lidas.
+- Estados da inscrição: pendente, aprovada, rejeitada, lista de espera e cancelada.
 
-### Pagamentos
+### Pagamentos e presença
 
-- Registro de pagamento para atividades pagas;
-- Controle do status do pagamento;
-- Registro da forma de pagamento;
-- Registro da data de pagamento.
+- Registro administrativo do valor, situação, método e data de pagamento.
+- Registro administrativo de presença, horário de entrada e observações.
+- Cada inscrição admite no máximo um pagamento e um registro de presença.
+- O pagamento é um registro de controle; não há integração implementada com gateway de cobrança.
 
-### Presença
+### Interface
 
-- Registro de presença do participante;
-- Data e horário de check-in;
-- Observações relacionadas à participação.
+- Bootstrap, layouts adaptáveis e regras CSS para telas menores.
+- Alternância entre tema claro e escuro no site, com preferência armazenada no navegador.
+- Menus conforme o usuário autenticado e seu perfil.
 
-## 🗃️ Modelagem do Banco de Dados
+## Modelagem do banco de dados
 
-O sistema utiliza um banco de dados relacional composto pelas seguintes entidades principais:
+| App | Entidades |
+| --- | --- |
+| `accounts` | `User` |
+| `activities` | `Modality`, `Location`, `Activity` |
+| `registrations` | `Registration`, `Payment`, `Attendance`, `Notification` |
 
-- `User`;
-- `Modality`;
-- `Location`;
-- `Activity`;
-- `Registration`;
-- `Payment`;
-- `Attendance`.
+Um usuário organiza atividades e realiza inscrições. Cada atividade pertence a uma modalidade e a um local. A inscrição relaciona participante e atividade, podendo ter pagamento, presença e várias notificações. Cada notificação tem um destinatário; a referência à inscrição pode ser nula.
 
-Os principais relacionamentos são:
+[Consultar o diagrama entidade-relacionamento e as restrições](docs/der.md).
 
-- um usuário pode organizar várias atividades;
-- um usuário pode possuir várias inscrições;
-- uma modalidade pode estar associada a várias atividades;
-- um local pode receber várias atividades;
-- uma atividade pode possuir várias inscrições;
-- uma inscrição pode possuir um pagamento;
-- uma inscrição pode possuir um registro de presença.
+### Regras implementadas
 
-📊 [Visualizar o Diagrama Entidade-Relacionamento](docs/der.md)
+- A combinação de atividade e participante é única no banco.
+- O limite de vagas deve ser positivo e o valor da atividade não pode ser negativo.
+- O término deve ser posterior ao início e o prazo de confirmação deve anteceder o início.
+- Novas inscrições exigem atividade publicada, ainda não iniciada e com prazo de confirmação aberto.
+- O organizador não pode se inscrever na própria atividade pelo fluxo do site.
+- Inscrições pendentes, aprovadas e ofertas de vaga da lista de espera ocupam vagas no fluxo de inscrição.
+- A aceitação de uma vaga da fila gera aprovação automática ou solicitação pendente, conforme o tipo da atividade.
+- Organizadores consultam e gerenciam os registros das próprias atividades; o superusuário possui acesso geral.
 
-## 🧩 Organização dos Apps Django
+## Ambiente administrativo
 
-O projeto está dividido em três aplicações principais:
+A rota `/admin/` exige autenticação, usuário ativo, acesso de equipe e perfil de organizador ou superusuário. O painel utiliza Jazzmin, identidade visual JogaJunto, ícones, CSS personalizado, seções nos formulários e controles de inscrições dentro da atividade.
 
-```
-accounts/
-activities/
-registrations/
-```
+As sete entidades principais (`User`, `Modality`, `Location`, `Activity`, `Registration`, `Payment` e `Attendance`) estão registradas no Admin. Notificações são consultadas nas telas do usuário.
 
-### `accounts`
+| Cadastro | Filtros disponíveis |
+| --- | --- |
+| Usuários | Perfil, equipe, superusuário, grupos e ativo |
+| Modalidades | Ativa |
+| Locais | Estado e cidade |
+| Atividades | Status, tipo de inscrição, modalidade, organizador, cidade, gratuito/pago e início |
+| Inscrições | Status, data de solicitação, status da atividade e modalidade |
+| Pagamentos | Status e método |
+| Presenças | Presente |
 
-Responsável pelo gerenciamento dos usuários e autenticação.
+Também existem buscas textuais e hierarquia de datas em atividades, inscrições e pagamentos.
 
-Principais models:
+## Estrutura do projeto
 
-```
-User
-```
+Estrutura resumida dos arquivos existentes; as rotas estão centralizadas em `config/urls.py`.
 
-### `activities`
-
-Responsável pelo cadastro e gerenciamento das atividades físicas.
-
-Principais models:
-
-```
-Modality
-Location
-Activity
-```
-
-### `registrations`
-
-Responsável pelas inscrições, pagamentos e controle de presença.
-
-Principais models:
-
-```
-Registration
-Payment
-Attendance
-```
-
-## 📁 Estrutura do Projeto
-
-A estrutura prevista para o projeto é:
-
-```
-.
+```text
+JogaJunto/
 ├── accounts/
+│   ├── management/commands/sync_access.py
 │   ├── migrations/
 │   ├── admin.py
 │   ├── apps.py
+│   ├── forms.py
 │   ├── models.py
+│   ├── permissions.py
+│   ├── signals.py
 │   ├── tests.py
-│   ├── urls.py
 │   └── views.py
-│
 ├── activities/
 │   ├── migrations/
+│   ├── templates/widgets/date_time.html
 │   ├── admin.py
 │   ├── apps.py
+│   ├── forms.py
 │   ├── models.py
 │   ├── tests.py
-│   ├── urls.py
 │   └── views.py
-│
 ├── registrations/
 │   ├── migrations/
 │   ├── admin.py
 │   ├── apps.py
+│   ├── context_processors.py
 │   ├── models.py
+│   ├── signals.py
 │   ├── tests.py
-│   ├── urls.py
-│   └── views.py
-│
+│   ├── test_waitlist.py
+│   ├── views.py
+│   └── waitlist.py
 ├── config/
+│   ├── admin_site.py
+│   ├── admin_widgets.py
 │   ├── settings.py
+│   ├── test_admin_widgets.py
 │   ├── urls.py
 │   ├── asgi.py
 │   └── wsgi.py
-│
-├── docs/
-│   └── der.md
-│
-├── static/
-│   ├── css/
-│   ├── js/
-│   └── img/
-│
+├── docs/der.md
+├── static/css/
+│   ├── admin.css
+│   └── site.css
 ├── templates/
-│
+│   ├── admin/
+│   ├── includes/
+│   ├── registration/
+│   ├── registrations/
+│   ├── activity_form.html
+│   ├── base.html
+│   ├── home.html
+│   └── notifications.html
 ├── manage.py
 ├── requirements.txt
 └── README.md
 ```
 
-A estrutura poderá sofrer alterações durante o desenvolvimento da aplicação.
+## Instalação e execução local
 
-## 🔐 Ambiente Administrativo
+Os comandos abaixo usam PowerShell e Python 3.13, utilizado no ambiente local do projeto. Não é necessário ativar o ambiente: o executável é chamado diretamente, inclusive para executar o pip.
 
-O projeto possui um ambiente administrativo protegido por autenticação.
-
-O Django Admin será personalizado com um tema administrativo e terá recursos como:
-
-- filtros por status;
-- filtros por modalidade;
-- filtros por tipo de inscrição;
-- filtros por data;
-- busca por atividade;
-- busca por participante;
-- busca por organizador;
-- hierarquia de datas;
-- gerenciamento de usuários;
-- gerenciamento de atividades;
-- gerenciamento de inscrições;
-- gerenciamento de pagamentos;
-- gerenciamento de presença.
-
-## 🌿 Organização do Repositório
-
-O desenvolvimento utiliza Git e GitHub.
-
-As principais branches do projeto são:
-
-```
-main
-develop
-feature
+```powershell
+git clone https://github.com/i-am-Gab/JogaJunto.git
+cd JogaJunto
+py -3.13 -m venv venv
+.\venv\Scripts\python.exe -m pip install "Django==6.1.2" "django-jazzmin==3.0.5" "python-dotenv==1.2.4"
+.\venv\Scripts\python.exe manage.py check
+.\venv\Scripts\python.exe manage.py migrate
+.\venv\Scripts\python.exe manage.py createsuperuser
+.\venv\Scripts\python.exe manage.py runserver
 ```
 
-Durante o desenvolvimento também poderão ser utilizadas branches específicas, por exemplo:
+O `requirements.txt` atual também contém pacotes de outras áreas, como análise de dados e processamento de áudio. A instalação acima usa as dependências diretas necessárias ao código Django atual. A lista completa inclui `numba==0.61.2`, cuja instalação falhou com Python 3.14; ela ainda precisa ser revisada para representar apenas o projeto.
 
-```
-feature/database-models
-feature/admin
-feature/authentication
-feature/activities
-feature/registrations
-feature/frontend
-```
+No Linux/macOS, crie o ambiente com `python3.13 -m venv venv` e substitua `.\venv\Scripts\python.exe` por `./venv/bin/python` nos comandos seguintes.
 
-### Fluxo de desenvolvimento
+- Site: http://127.0.0.1:8000/
+- Admin: http://127.0.0.1:8000/admin/
+- Cadastro: http://127.0.0.1:8000/cadastro/
+- Minhas inscrições: http://127.0.0.1:8000/minhas-inscricoes/
+- Análise do organizador: http://127.0.0.1:8000/organizador/inscricoes/
+- Notificações: http://127.0.0.1:8000/notificacoes/
 
-```
-feature/*
-    ↓
-develop
-    ↓
-main
-```
+Encerre o servidor com `Ctrl+C`. Nas execuções seguintes, basta entrar na pasta e executar `runserver` pelo Python do ambiente virtual. Não é necessário gerar novas migrations para instalar o projeto: as migrations existentes são aplicadas por `migrate`.
 
-A branch `main` deverá conter versões estáveis do projeto.
+### Configuração e primeiros cadastros
 
-A branch `develop` será utilizada para integração das funcionalidades em desenvolvimento.
+O banco SQLite `db.sqlite3` é criado por `migrate`. Os dados de demonstração devem ser cadastrados pelo grupo; não há comando de carga de exemplos no projeto.
 
-As branches `feature/*` serão utilizadas para implementação isolada de funcionalidades.
+1. Entre no Admin com o superusuário criado.
+2. Cadastre modalidades e locais.
+3. Crie usuários ou utilize o cadastro público. Para conceder acesso de organizador, edite o perfil do usuário pelo Admin com o superusuário.
+4. Cadastre atividades e use uma conta de participante para testar inscrições.
 
-## 🚀 Instalação
+A aplicação lê `SECRET_KEY` das variáveis de ambiente ou de um arquivo `.env` na pasta do projeto. Sem essa configuração, usa uma chave padrão de desenvolvimento. `DEBUG=True` e SQLite estão configurados para execução local. O fuso horário é `America/Sao_Paulo`.
 
-### 1. Clone o repositório
+Bootstrap e outros recursos visuais utilizam CDN; mantenha conexão com a internet durante a demonstração para carregar esses recursos.
 
-```bash
-git clone [URL_DO_REPOSITORIO]
+### Verificações e testes
+
+```powershell
+.\venv\Scripts\python.exe manage.py check
+.\venv\Scripts\python.exe manage.py test
 ```
 
-Entre na pasta do projeto:
+Existem testes de cadastro, permissões, atividades, inscrições, lista de espera e widgets administrativos. Para sincronizar novamente os grupos e permissões dos usuários existentes:
 
-```bash
-cd [NOME_DA_PASTA]
+```powershell
+.\venv\Scripts\python.exe manage.py sync_access
 ```
 
-### 2. Crie um ambiente virtual
+## Versionamento e checkpoints
 
-No Windows:
+Repositório: https://github.com/i-am-Gab/JogaJunto
 
-```bash
-python -m venv venv
-```
+As referências Git locais incluem `main`, `origin/develop` e `origin/feature`. A visibilidade pública, os colaboradores e a entrega do link no Campus Virtual devem ser conferidos no GitHub e no ambiente da disciplina.
 
-Ative o ambiente virtual:
-
-```bash
-venv\Scripts\activate
-```
-
-No Linux/macOS:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Instale as dependências
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Execute as migrations
-
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### 5. Crie um superusuário
-
-```bash
-python manage.py createsuperuser
-```
-
-### 6. Execute o servidor
-
-```bash
-python manage.py runserver
-```
-
-A aplicação estará disponível, por padrão, em:
-
-```
-http://127.0.0.1:8000/
-```
-
-O ambiente administrativo estará disponível em:
-
-```
-http://127.0.0.1:8000/admin/
-```
-
-## 🧪 Estado Atual do Desenvolvimento
-
-### Checkpoint 1
-
-- [ ]  Estrutura inicial do projeto Django;
-- [ ]  Apps `accounts`, `activities` e `registrations`;
-- [ ]  Modelagem completa do banco de dados;
-- [ ]  Models implementados;
-- [ ]  Migrations criadas e aplicadas;
-- [ ]  Diagrama Entidade-Relacionamento;
-- [ ]  Ambiente administrativo configurado;
-- [ ]  Tema personalizado no Django Admin;
-- [ ]  Filtros e mecanismos de busca no Admin;
-- [ ]  Repositório público organizado no GitHub;
-- [ ]  Branches `main`, `develop` e `feature`.
-
-### Checkpoint 2
-
-- [ ]  Login;
-- [ ]  Logout;
-- [ ]  Cadastro de usuários;
-- [ ]  Área do participante;
-- [ ]  Área do organizador;
-- [ ]  CRUD das principais entidades;
-- [ ]  Interface responsiva;
-- [ ]  Tema claro;
-- [ ]  Tema escuro;
-- [ ]  Integração completa com o banco de dados;
-- [ ]  Finalização da documentação.
-
-## 📋 Regras de Negócio
-
-Algumas das principais regras previstas para o sistema são:
-
-1. Um usuário não poderá possuir duas inscrições para a mesma atividade.
-2. O limite de participantes de uma atividade deverá ser maior que zero.
-3. O valor de uma atividade não poderá ser negativo.
-4. O horário de término deverá ser posterior ao horário de início.
-5. O prazo de confirmação deverá ocorrer antes do início da atividade.
-6. Atividades poderão possuir inscrição automática ou mediante aprovação.
-7. Inscrições sujeitas à aprovação poderão assumir os estados pendente, aprovada, rejeitada, cancelada ou lista de espera.
-8. Pagamentos serão associados apenas às inscrições que necessitarem desse controle.
-9. O organizador será responsável pelo gerenciamento das inscrições de suas atividades.
-10. Cada inscrição poderá possuir no máximo um registro de pagamento e um registro de presença.
-
----
-
-## 📄 Licença
-
-Projeto acadêmico desenvolvido para a disciplina **GAC116 - Programação Web**.
-
-Universidade Federal de Lavras — UFLA.
+Para o Checkpoint 1, o projeto possui models e migrations, diagrama relacional, Admin com Jazzmin, filtros, buscas e separação em três apps. Para a etapa final, já há código de autenticação, cadastro, áreas por perfil, inscrições, notificações, interface Bootstrap e temas claro/escuro. Essa descrição registra a implementação existente; a validação completa dos fluxos e da responsividade deve ser feita antes da entrega.
