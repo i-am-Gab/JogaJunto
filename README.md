@@ -26,14 +26,17 @@ Organizadores cadastram atividades e gerenciam inscrições. Participantes consu
 - Cadastro público de participantes, login por usuário e senha e logout.
 - Cadastro público não permite escolher privilégios de organizador ou administrador.
 - Participante: acessa suas inscrições e notificações nas telas do site; não acessa o Admin.
-- Organizador: cria atividades e gerencia suas atividades, inscrições, pagamentos e presenças no Admin; também possui uma tela de análise de inscrições.
+- Organizador: cria atividades e gerencia suas atividades, inscrições, pagamentos e presenças no Admin; possui dashboard com indicadores e tela de análise de inscrições.
 - Superusuário: acesso administrativo geral, incluindo gerenciamento de usuários e perfis.
 - Grupos e permissões sincronizados conforme o perfil do usuário.
+- O dashboard e a análise de solicitações ficam restritos a organizadores; participante recebe negação de acesso.
 
 ### Atividades
 
 - Listagem pública de atividades publicadas, com modalidade, local, horário, valor e disponibilidade.
 - Criação de atividades pela tela do organizador; nessa tela, a atividade é publicada diretamente.
+- Dashboard do organizador (`/organizador/`) com totais de atividades, pendências, confirmadas, lista de espera e vagas ocupadas, além da lista das atividades do próprio usuário.
+- Atalhos do dashboard para criar atividade e abrir a análise de solicitações, inclusive filtrada por atividade.
 - Cadastro, consulta, edição e exclusão de atividades pelo Admin, respeitando as permissões.
 - Modalidades e locais gerenciados pelo Admin. Organizadores podem cadastrar esses registros; sua edição e exclusão ficam restritas ao superusuário.
 - Atividades gratuitas ou pagas, com limite de vagas, prazo de confirmação e inscrição automática ou mediante aprovação.
@@ -110,7 +113,9 @@ Estrutura resumida dos arquivos existentes; as rotas estão centralizadas em `co
 ```text
 JogaJunto/
 ├── accounts/
-│   ├── management/commands/sync_access.py
+│   ├── management/commands/
+│   │   ├── seed_demo.py
+│   │   └── sync_access.py
 │   ├── migrations/
 │   ├── admin.py
 │   ├── apps.py
@@ -153,6 +158,8 @@ JogaJunto/
 │   ├── admin.css
 │   └── site.css
 ├── templates/
+│   ├── activities/
+│   │   └── dashboard.html
 │   ├── admin/
 │   ├── includes/
 │   ├── registration/
@@ -187,8 +194,10 @@ No Linux/macOS, crie o ambiente com `python3.13 -m venv venv` e substitua `.\ven
 
 - Site: http://127.0.0.1:8000/
 - Admin: http://127.0.0.1:8000/admin/
+- Login: http://127.0.0.1:8000/login/
 - Cadastro: http://127.0.0.1:8000/cadastro/
 - Minhas inscrições: http://127.0.0.1:8000/minhas-inscricoes/
+- Dashboard do organizador: http://127.0.0.1:8000/organizador/
 - Análise do organizador: http://127.0.0.1:8000/organizador/inscricoes/
 - Notificações: http://127.0.0.1:8000/notificacoes/
 
@@ -230,7 +239,7 @@ A senha inicial das contas novas é **`JogaJuntoDemo!2026`**. Entre com o nome d
 python manage.py seed_demo --password "SuaSenhaDeDemonstracao!2026"
 ```
 
-Os exemplos incluem inscrição pendente, aprovada, rejeitada, cancelada e em lista de espera; uma atividade lotada com fila; uma vaga reservada aguardando confirmação; atividades com inscrição automática e por aprovação; rascunho e atividades cancelada e finalizada. Entre com `demo_diego` para testar a confirmação da vaga reservada. Com `demo_ana`, cancele a inscrição no futebol para testar o aviso ao primeiro da fila (`demo_bruno`).
+Os exemplos incluem inscrição pendente, aprovada, rejeitada, cancelada e em lista de espera; uma atividade lotada com fila; uma vaga reservada aguardando confirmação; atividades com inscrição automática e por aprovação; rascunho e atividades cancelada e finalizada. Entre com `demo_organizador` para ver o dashboard e as solicitações. Entre com `demo_diego` para testar a confirmação da vaga reservada. Com `demo_ana`, cancele a inscrição no futebol para testar o aviso ao primeiro da fila (`demo_bruno`).
 
 As atividades abertas são criadas com datas futuras em relação à primeira execução, no fuso do projeto. A atividade finalizada usa datas passadas.
 
@@ -245,7 +254,7 @@ Os cadastros são feitos em uma única transação. A carga não dispara as roti
 .\venv\Scripts\python.exe manage.py test
 ```
 
-Existem testes de cadastro, permissões, atividades, inscrições, lista de espera e widgets administrativos. Para sincronizar novamente os grupos e permissões dos usuários existentes:
+Existem testes de cadastro, permissões, atividades, dashboard do organizador, inscrições, lista de espera e widgets administrativos. Para sincronizar novamente os grupos e permissões dos usuários existentes:
 
 ```powershell
 .\venv\Scripts\python.exe manage.py sync_access
@@ -257,4 +266,4 @@ Repositório: https://github.com/i-am-Gab/JogaJunto
 
 As referências Git locais incluem `main`, `origin/develop` e `origin/feature`. A visibilidade pública, os colaboradores e a entrega do link no Campus Virtual devem ser conferidos no GitHub e no ambiente da disciplina.
 
-Para o Checkpoint 1, o projeto possui models e migrations, diagrama relacional, Admin com Jazzmin, filtros, buscas e separação em três apps. Para a etapa final, já há código de autenticação, cadastro, áreas por perfil, inscrições, notificações, interface Bootstrap e temas claro/escuro. Essa descrição registra a implementação existente; a validação completa dos fluxos e da responsividade deve ser feita antes da entrega.
+Para o Checkpoint 1, o projeto possui models e migrations, diagrama relacional, Admin com Jazzmin, filtros, buscas, grupos de acesso e separação em três apps. Para a etapa final, já há autenticação, cadastro, áreas por perfil, dashboard do organizador, inscrições, lista de espera, notificações, interface Bootstrap e temas claro/escuro. Essa descrição registra a implementação existente; a validação completa dos fluxos e da responsividade deve ser feita antes da entrega.
