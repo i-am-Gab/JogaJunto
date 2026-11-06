@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.db import IntegrityError, transaction
 from django.views.decorators.http import require_POST
 
@@ -11,6 +11,110 @@ from registrations.waitlist import occupied_seats, offer_available_seats
 
 from .forms import ActivityForm
 from .models import Activity
+
+
+OCCUPIED_FILTER = Q(registrations__status__in=["PENDING", "APPROVED"]) | Q(
+    registrations__status="WAITLIST",
+    registrations__seat_offered_at__isnull=False,
+)
+
+
+@login_required
+def organizer_dashboard(request):
+    if not request.user.has_organizer_group():
+        raise PermissionDenied
+
+    own_activities = Activity.objects.filter(organizer=request.user)
+    activities = (
+        own_activities.select_related("modality", "location")
+        .annotate(
+            pending_count=Count(
+                "registrations",
+                filter=Q(registrations__status="PENDING"),
+                distinct=True,
+            ),
+            approved_count=Count(
+                "registrations",
+                filter=Q(registrations__status="APPROVED"),
+                distinct=True,
+            ),
+            waitlist_count=Count(
+                "registrations",
+                filter=Q(registrations__status="WAITLIST"),
+                distinct=True,
+            ),
+            occupied_count=Count(
+                "registrations",
+                filter=OCCUPIED_FILTER,
+                distinct=True,
+            ),
+        )
+        .order_by("starts_at", "pk")
+    )
+
+    registration_totals = (
+        Registration.objects.filter(activity__organizer=request.user)
+        .values("status")
+        .annotate(total=Count("pk"))
+    )
+    status_totals = {row["status"]: row["total"] for row in registration_totals}
+    pending_total = status_totals.get("PENDING", 0)
+    approved_total = status_totals.get("APPROVED", 0)
+    waitlist_total = status_totals.get("WAITLIST", 0)
+    occupied_total = occupied_seats(
+        Registration.objects.filter(activity__organizer=request.user)
+    ).count()
+    capacity_total = own_activities.aggregate(total=Sum("max_participants"))["total"] or 0
+    activities_total = own_activities.count()
+    published_total = own_activities.filter(status="PUBLISHED").count()
+
+    cards = [
+        {
+            "label": "Atividades",
+            "value": activities_total,
+            "hint": f"{published_total} publicadas",
+            "icon": "fa-calendar-check",
+            "tone": "primary",
+        },
+        {
+            "label": "Pendentes",
+            "value": pending_total,
+            "hint": "Aguardando sua decisão",
+            "icon": "fa-hourglass-half",
+            "tone": "warning",
+        },
+        {
+            "label": "Confirmadas",
+            "value": approved_total,
+            "hint": "Inscrições aprovadas",
+            "icon": "fa-user-check",
+            "tone": "success",
+        },
+        {
+            "label": "Lista de espera",
+            "value": waitlist_total,
+            "hint": "Participantes na fila",
+            "icon": "fa-list-ol",
+            "tone": "info",
+        },
+        {
+            "label": "Vagas ocupadas",
+            "value": occupied_total,
+            "hint": f"de {capacity_total} vagas totais",
+            "icon": "fa-users",
+            "tone": "secondary",
+        },
+    ]
+
+    return render(
+        request,
+        "activities/dashboard.html",
+        {
+            "cards": cards,
+            "activities": activities,
+            "pending_total": pending_total,
+        },
+    )
 
 
 def home(request):

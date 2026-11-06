@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from activities.views import home, subscribe_activity, create_activity
+from activities.views import home, subscribe_activity, create_activity, organizer_dashboard
 from accounts.views import signup
 from registrations import views as registration_views
 from accounts.forms import LoginForm
@@ -10,6 +10,7 @@ urlpatterns = [
     path("minhas-inscricoes/<int:registration_id>/confirmar-vaga/", registration_views.confirm_waitlist_seat, name="confirm_waitlist_seat"),
     path("minhas-inscricoes/", registration_views.my_registrations, name="my_registrations"),
     path("minhas-inscricoes/<int:registration_id>/cancelar/", registration_views.cancel_registration, name="cancel_registration"),
+    path("organizador/", organizer_dashboard, name="organizer_dashboard"),
     path("organizador/inscricoes/", registration_views.review_registrations, name="review_registrations"),
     path("organizador/inscricoes/<int:registration_id>/decidir/", registration_views.decide_registration, name="decide_registration"),
     path("notificacoes/", registration_views.notifications, name="notifications"),
