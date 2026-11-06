@@ -297,3 +297,37 @@ class ActivityValidationTests(ActivityFactoryMixin, TestCase):
             response = self.client.post(reverse("admin:activities_activity_add") if admin else reverse("create_activity"), data)
             self.assertEqual(response.status_code, 302)
             self.assertTrue(Activity.objects.filter(title=data["title"]).exists())
+
+
+class OrganizerDashboardTests(ActivityFactoryMixin, TestCase):
+    def test_participant_cannot_open_dashboard(self):
+        self.client.force_login(self.create_user("part_dash"))
+        response = self.client.get(reverse("organizer_dashboard"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_organizer_sees_only_own_stats_and_activities(self):
+        owner = self.create_user("org_dash", organizer=True)
+        other = self.create_user("org_other", organizer=True)
+        participant = self.create_user("part_stats")
+        own = self.create_activity(owner, "Minha corrida")
+        foreign = self.create_activity(other, "Corrida alheia")
+        Registration.objects.create(activity=own, participant=participant, status="PENDING")
+        Registration.objects.create(
+            activity=foreign,
+            participant=self.create_user("outro_part"),
+            status="APPROVED",
+        )
+
+        self.client.force_login(owner)
+        response = self.client.get(reverse("organizer_dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Minha corrida")
+        self.assertNotContains(response, "Corrida alheia")
+        self.assertContains(response, "Dashboard")
+        self.assertEqual(response.context["pending_total"], 1)
+        self.assertEqual(list(response.context["activities"]), [own])
+        labels = {card["label"]: card["value"] for card in response.context["cards"]}
+        self.assertEqual(labels["Atividades"], 1)
+        self.assertEqual(labels["Pendentes"], 1)
+        self.assertEqual(labels["Confirmadas"], 0)
