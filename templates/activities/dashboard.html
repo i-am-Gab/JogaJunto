@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard — JogaJunto{% endblock %}
+
+{% block content %}
+<div class="dashboard-page mx-auto">
+    <a href="{% url 'home' %}" class="text-decoration-none small">← Voltar às atividades</a>
+
+    <header class="my-4 d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <p class="text-primary fw-semibold small mb-2">ÁREA DO ORGANIZADOR</p>
+            <h1 class="h2 fw-bold mb-2">Dashboard</h1>
+            <p class="text-secondary mb-0">
+                Resumo das suas atividades, vagas e solicitações pendentes.
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'review_registrations' %}" class="btn btn-outline-primary">
+                Solicitações
+                {% if pending_total %}<span class="badge bg-warning text-dark ms-1">{{ pending_total }}</span>{% endif %}
+            </a>
+            <a href="{% url 'create_activity' %}" class="btn btn-primary fw-bold">
+                <i class="fa-solid fa-plus me-1"></i> Nova atividade
+            </a>
+        </div>
+    </header>
+
+    <section class="row g-3 mb-4" aria-label="Indicadores">
+        {% for card in cards %}
+        <div class="col-6 col-lg">
+            <article class="card border-0 shadow-sm h-100 dashboard-card dashboard-card-{{ card.tone }}">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="small text-secondary fw-semibold">{{ card.label }}</span>
+                        <i class="fa-solid {{ card.icon }} text-{{ card.tone }}" aria-hidden="true"></i>
+                    </div>
+                    <p class="display-6 fw-bold mb-1 lh-1">{{ card.value }}</p>
+                    <p class="small text-secondary mb-0">{{ card.hint }}</p>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </section>
+
+    <section aria-labelledby="minhas-atividades-titulo">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+            <h2 id="minhas-atividades-titulo" class="h4 fw-bold mb-0">Minhas atividades</h2>
+            <span class="small text-secondary">{{ activities|length }} no total</span>
+        </div>
+
+        {% for activity in activities %}
+        <article class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
+                    <div>
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <h3 class="h5 fw-bold mb-0">{{ activity.title }}</h3>
+                            <span class="badge {% if activity.status == 'PUBLISHED' %}bg-success{% elif activity.status == 'DRAFT' %}bg-secondary{% elif activity.status == 'CANCELED' %}bg-danger{% else %}bg-dark{% endif %}">
+                                {{ activity.get_status_display }}
+                            </span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                {{ activity.modality.name }}
+                            </span>
+                        </div>
+                        <p class="small text-secondary mb-0">
+                            <i class="fa-regular fa-calendar me-1"></i>
+                            {{ activity.starts_at|date:"d/m/Y \à\s H:i" }}
+                            ·
+                            <i class="fa-solid fa-location-dot me-1"></i>
+                            {{ activity.location.name }} ({{ activity.location.city }})
+                        </p>
+                    </div>
+                    <a href="{% url 'review_registrations' %}?atividade={{ activity.pk }}" class="btn btn-outline-primary btn-sm align-self-start">
+                        Gerenciar inscrições
+                    </a>
+                </div>
+
+                <div class="row g-2 text-center">
+                    <div class="col-6 col-md-3">
+                        <div class="bg-body-tertiary rounded-3 p-3 h-100">
+                            <div class="fw-bold fs-5">{{ activity.occupied_count }}/{{ activity.max_participants }}</div>
+                            <div class="small text-secondary">Vagas</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="bg-body-tertiary rounded-3 p-3 h-100">
+                            <div class="fw-bold fs-5 {% if activity.pending_count %}text-warning{% endif %}">{{ activity.pending_count }}</div>
+                            <div class="small text-secondary">Pendentes</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="bg-body-tertiary rounded-3 p-3 h-100">
+                            <div class="fw-bold fs-5 text-success">{{ activity.approved_count }}</div>
+                            <div class="small text-secondary">Confirmadas</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="bg-body-tertiary rounded-3 p-3 h-100">
+                            <div class="fw-bold fs-5 text-info">{{ activity.waitlist_count }}</div>
+                            <div class="small text-secondary">Lista de espera</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <div class="card text-center p-5 border-0 shadow-sm">
+            <i class="fa-solid fa-calendar-plus fs-1 text-secondary mb-3"></i>
+            <h2 class="h5 fw-bold">Nenhuma atividade ainda</h2>
+            <p class="text-secondary mb-3">Crie sua primeira atividade para acompanhar vagas e solicitações por aqui.</p>
+            <a href="{% url 'create_activity' %}" class="btn btn-primary">Criar atividade</a>
+        </div>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

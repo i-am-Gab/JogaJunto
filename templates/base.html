@@ -64,6 +64,7 @@
                     {% if unread_notifications %}<span class="badge bg-danger">{{ unread_notifications }}<span class="visually-hidden"> não lidas</span></span>{% endif %}
                 </a>
                 {% if user.has_organizer_group %}
+                <a href="{% url 'organizer_dashboard' %}" class="btn btn-outline-primary btn-sm">Dashboard</a>
                 <a href="{% url 'review_registrations' %}" class="btn btn-outline-primary btn-sm">Solicitações</a>
                 <a href="{% url 'create_activity' %}"
                     class="btn btn-primary btn-sm fw-bold shadow-sm d-none d-sm-block">
