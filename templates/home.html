@@ -3,7 +3,6 @@
 {% block title %}Início — JogaJunto{% endblock %}
 
 {% block content %}
-<!-- Estilos personalizados rápidos para dar um ar moderno -->
 <style>
     .hero-banner {
         background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
@@ -24,7 +23,22 @@
         font-weight: 600;
         letter-spacing: 0.5px;
     }
+
+    .map-preview-link span.badge {
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .map-preview-link:hover span.badge {
+        transform: scale(1.06);
+        background-color: #0d6efd !important;
+        color: #fff !important;
+    }
+
+    .map-preview-link:hover span.badge i {
+        color: #fff !important;
+    }
 </style>
+
 
 <!-- Hero Banner -->
 <div class="row mb-5">
@@ -38,17 +52,31 @@
     </div>
 </div>
 
+<!-- Barra de Busca e Filtro Rápido -->
+{% if activities %}
+<div class="row g-3 align-items-center mb-4">
+    <div class="col-md-5">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-body border-end-0"><i class="fa-solid fa-magnifying-glass text-secondary"></i></span>
+            <input type="text" id="searchActivityInput" class="form-control border-start-0" placeholder="Buscar por título ou local...">
+        </div>
+    </div>
+    <div class="col-md-7 d-flex flex-wrap gap-2 justify-content-md-end" id="modalityFilters">
+        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 filter-btn active" data-modality="all">Todas</button>
+    </div>
+</div>
+{% endif %}
+
 <!-- Grid de Cards de Atividades -->
 <div class="row g-4">
     {% for activity in activities %}
-    <div class="col-md-6 col-lg-4">
+    <div class="col-md-6 col-lg-4 activity-card-col" data-modality="{{ activity.modality.name }}">
         <div class="card h-100 shadow-sm border-0 bg-body-tertiary card-atividade">
             <div class="card-body d-flex flex-column p-4">
 
                 <!-- Cabeçalho do Card (Modalidade e Preço) -->
                 <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
-                    <span
-                        class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill badge-modalidade">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill badge-modalidade">
                         <i class="fa-solid fa-tag me-1"></i> {{ activity.modality.name }}
                     </span>
                     <span class="fw-bold fs-5 text-success">
@@ -81,17 +109,51 @@
 
                     <div class="d-flex align-items-center text-secondary small">
                         <i class="fa-solid fa-users text-warning me-2 fs-6"></i>
-                        <span
-                            class="{% if activity.active_registrations >= activity.max_participants %}text-danger fw-bold{% endif %}">
+                        <span class="{% if activity.active_registrations >= activity.max_participants %}text-danger fw-bold{% endif %}">
                             {{ activity.active_registrations }} de {{ activity.max_participants }} vagas
+                            <div class="d-flex align-items-center justify-content-between gap-3 text-secondary small mb-2">
+                                <span>
+                                    <i class="fa-solid fa-users text-warning me-2 fs-6"></i>
+                                    <span class="{% if activity.active_registrations >= activity.max_participants %}text-danger fw-bold{% endif %}">
+                                        {{ activity.active_registrations }} de {{ activity.max_participants }} vagas
+                                    </span>
+                                </span>
+                                {% if activity.registration_type == "MANUAL" %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-2 text-nowrap" title="Requer aprovação do organizador">
+                                    <i class="fa-solid fa-user-shield me-1"></i>Aprovação
+                                </span>
+                                {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle ms-2 text-nowrap" title="Inscrição confirmada na hora">
+                                    <i class="fa-solid fa-bolt me-1"></i>Imediata
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar {% if activity.active_registrations >= activity.max_participants %}bg-danger{% else %}bg-primary{% endif %}" role="progressbar" style="width: {% widthratio activity.active_registrations activity.max_participants 100 %}%;">
+                                </div>
+                            </div>
                         </span>
                     </div>
                 </div>
+                <!-- Mini Mapa Clicável com Pin -->
+                {% if activity.location %}
+                <div class="position-relative rounded-3 overflow-hidden border mb-3" style="height: 130px;">
+                    <iframe width="100%" frameborder="0" style="border:0; pointer-events: none; height: 240px; margin-top: -65px;" src="https://maps.google.com/maps?q={{ activity.location.maps_query }}&t=&z=15&ie=UTF8&iwloc=&output=embed" loading="lazy">
+                    </iframe>
+
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ activity.location.maps_query }}" target="_blank" rel="noopener noreferrer" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-end justify-content-end p-2 text-decoration-none" style="background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 55%);" title="Abrir no Google Maps">
+                        <span class="badge bg-light text-dark shadow-sm px-2 py-1">
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ activity.location.maps_query }}" target="_blank" rel="noopener noreferrer" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-end justify-content-end p-2 text-decoration-none map-preview-link" style="background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 55%);" title="Abrir no Google Maps">
+                                <span class="badge bg-light text-dark shadow-sm px-2 py-1">
+                                    <i class="fa-solid fa-location-dot text-danger me-1"></i> Ver no Maps
+                                </span>
+                            </a>
+                </div>
+                {% endif %}
 
                 <!-- Organizador -->
                 <div class="d-flex align-items-center mb-3">
-                    <div class="bg-secondary-subtle rounded-circle d-flex justify-content-center align-items-center me-2"
-                        style="width: 32px; height: 32px;">
+                    <div class="bg-secondary-subtle rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 32px; height: 32px;">
                         <i class="fa-solid fa-user text-secondary"></i>
                     </div>
                     <span class="small text-muted fw-medium">
@@ -107,7 +169,8 @@
                 <!-- Ações do Botão -->
                 <div class="mt-2">
                     {% if not user.is_authenticated %}
-                    <a href="{% url 'login' %}?next=/" class="btn btn-outline-primary w-100 py-2 fw-bold">Entrar para Participar</a>
+                    <a href="{% url 'login' %}?next=/" class="btn btn-outline-primary w-100 py-2 fw-bold">Entrar para
+                        Participar</a>
                     {% elif user == activity.organizer %}
                     <a class="btn btn-outline-primary w-100 py-2 fw-bold" href="{% url 'review_registrations' %}?atividade={{ activity.pk }}">Gerenciar inscrições</a>
                     {% elif activity.user_registration_status == 'PENDING' %}
@@ -116,7 +179,8 @@
                     <div class="alert alert-success mb-0 text-center" role="status">Inscrição confirmada</div>
                     {% elif activity.user_registration_status == 'WAITLIST' %}
                     {% if activity.user_seat_offered %}
-                    <a class="btn btn-success w-100" href="{% url 'my_registrations' %}">Vaga disponível! Confirmar participação</a>
+                    <a class="btn btn-success w-100" href="{% url 'my_registrations' %}">Vaga disponível! Confirmar
+                        participação</a>
                     {% else %}
                     <div class="alert alert-info mb-0 text-center" role="status">Na lista de espera</div>
                     {% endif %}
@@ -127,17 +191,30 @@
                     {% if activity.accepts_registrations %}
                     <form action="{% url 'subscribe_activity' activity.pk %}" method="post" class="mt-3">
                         {% csrf_token %}
-                        {% if activity.registration_type == 'MANUAL' %}<p class="small text-secondary">A nova solicitação precisa ser aprovada pelo organizador.</p>{% endif %}
+                        {% if activity.registration_type == 'MANUAL' %}
+                        <p class="small text-secondary">A nova solicitação precisa ser aprovada pelo organizador.</p>
+                        {% endif %}
                         <button class="btn btn-primary w-100">Inscrever-se novamente</button>
                     </form>
                     {% endif %}
                     {% elif not activity.accepts_registrations %}
                     <div class="alert alert-secondary mb-0 text-center">Inscrições encerradas</div>
                     {% else %}
-                    {% if activity.registration_type == "MANUAL" %}<p class="small text-secondary">A vaga será confirmada após a aprovação do organizador. Você receberá uma notificação.</p>{% endif %}
+                    {% if activity.registration_type == "MANUAL" %}
+                    <p class="small text-secondary">A vaga será confirmada após a aprovação do organizador. Você
+                        receberá uma notificação.</p>
+                    {% endif %}
                     <form action="{% url 'subscribe_activity' activity.id %}" method="POST" class="m-0">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">{% if activity.active_registrations >= activity.max_participants %}Entrar na lista de espera{% elif activity.registration_type == "MANUAL" %}Solicitar inscrição{% else %}Confirmar inscrição{% endif %}</button>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                            {% if activity.active_registrations >= activity.max_participants %}
+                            Entrar na lista de espera
+                            {% elif activity.registration_type == "MANUAL" %}
+                            Solicitar inscrição
+                            {% else %}
+                            Confirmar inscrição
+                            {% endif %}
+                        </button>
                     </form>
                     {% endif %}
                 </div>
@@ -155,4 +232,48 @@
     </div>
     {% endfor %}
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cards = document.querySelectorAll(".activity-card-col");
+        const filterContainer = document.getElementById("modalityFilters");
+        const searchInput = document.getElementById("searchActivityInput");
+        if (!cards.length || !filterContainer) return;
+
+        // Gera botões únicos para cada modalidade presente na tela
+        const modalities = [...new Set([...cards].map(c => c.dataset.modality).filter(Boolean))];
+        modalities.forEach(mod => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn-outline-primary btn-sm rounded-pill px-3 filter-btn";
+            btn.dataset.modality = mod;
+            btn.textContent = mod;
+            filterContainer.appendChild(btn);
+        });
+
+        let activeModality = "all";
+
+        function applyFilters() {
+            const term = (searchInput?.value || "").toLowerCase().trim();
+            cards.forEach(card => {
+                const matchesMod = activeModality === "all" || card.dataset.modality === activeModality;
+                const matchesText = !term || card.textContent.toLowerCase().includes(term);
+                card.style.display = (matchesMod && matchesText) ? "" : "none";
+            });
+        }
+
+        filterContainer.addEventListener("click", e => {
+            if (!e.target.classList.contains("filter-btn")) return;
+            filterContainer.querySelectorAll(".filter-btn").forEach(b => {
+                b.classList.remove("btn-primary", "active");
+                b.classList.add("btn-outline-primary");
+            });
+            e.target.classList.remove("btn-outline-primary");
+            e.target.classList.add("btn-primary", "active");
+            activeModality = e.target.dataset.modality;
+            applyFilters();
+        });
+
+        searchInput?.addEventListener("input", applyFilters);
+    });
+</script>
 {% endblock %}

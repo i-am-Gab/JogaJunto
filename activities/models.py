@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from urllib.parse import quote
 
 
 class Modality(models.Model):
@@ -37,6 +38,21 @@ class Location(models.Model):
         "Longitude", max_digits=11, decimal_places=8, blank=True, null=True
     )
 
+    @property
+    def maps_query(self):
+        # 1. Prioriza a geolocalização exata (latitude e longitude) se ambas estiverem cadastradas
+        if self.latitude is not None and self.longitude is not None:
+            lat = str(self.latitude).replace(",", ".")
+            lng = str(self.longitude).replace(",", ".")
+            return f"{lat},{lng}"
+
+        # 2. Fallback: se não houver coordenadas, monta o endereço por extenso
+        parts = [self.street, self.number, self.neighborhood, self.city, self.state]
+        address = ", ".join(str(p) for p in parts if p)
+        if not address:
+            address = f"{self.name}, {self.city or 'Lavras'}"
+        return quote(address)
+
     class Meta:
         verbose_name = "Local"
         verbose_name_plural = "Locais"
@@ -57,13 +73,20 @@ class Activity(models.Model):
     organizer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="organized_activities", verbose_name="Organizador",
+        related_name="organized_activities",
+        verbose_name="Organizador",
     )
     modality = models.ForeignKey(
-        Modality, on_delete=models.PROTECT, related_name="activities", verbose_name="Modalidade"
+        Modality,
+        on_delete=models.PROTECT,
+        related_name="activities",
+        verbose_name="Modalidade",
     )
     location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="activities", verbose_name="Local"
+        Location,
+        on_delete=models.PROTECT,
+        related_name="activities",
+        verbose_name="Local",
     )
 
     title = models.CharField("Título", max_length=200)
@@ -71,10 +94,14 @@ class Activity(models.Model):
     starts_at = models.DateTimeField("Início")
     ends_at = models.DateTimeField("Término")
     max_participants = models.PositiveIntegerField(
-        "Limite de Participantes", validators=[MinValueValidator(1, message="Informe pelo menos uma vaga.")]
+        "Limite de Participantes",
+        validators=[MinValueValidator(1, message="Informe pelo menos uma vaga.")],
     )
     price = models.DecimalField(
-        "Valor", max_digits=10, decimal_places=2, default=0.00,
+        "Valor",
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
         validators=[MinValueValidator(0, message="O valor não pode ser negativo.")],
     )
     confirmation_deadline = models.DateTimeField(
@@ -94,15 +121,27 @@ class Activity(models.Model):
     @property
     def accepts_registrations(self):
         now = timezone.now()
-        return self.status == "PUBLISHED" and now < self.starts_at and now < self.confirmation_deadline
+        return (
+            self.status == "PUBLISHED"
+            and now < self.starts_at
+            and now < self.confirmation_deadline
+        )
 
     def clean(self):
         super().clean()
         errors = {}
         if self.starts_at and self.ends_at and self.ends_at <= self.starts_at:
-            errors["ends_at"] = "O término deve ser depois do início da atividade. Confira a data e o horário."
-        if self.starts_at and self.confirmation_deadline and self.confirmation_deadline >= self.starts_at:
-            errors["confirmation_deadline"] = "O prazo de confirmação deve ser antes do início da atividade. Confira a data e o horário."
+            errors["ends_at"] = (
+                "O término deve ser depois do início da atividade. Confira a data e o horário."
+            )
+        if (
+            self.starts_at
+            and self.confirmation_deadline
+            and self.confirmation_deadline >= self.starts_at
+        ):
+            errors["confirmation_deadline"] = (
+                "O prazo de confirmação deve ser antes do início da atividade. Confira a data e o horário."
+            )
         if errors:
             raise ValidationError(errors)
 

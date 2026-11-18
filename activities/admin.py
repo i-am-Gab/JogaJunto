@@ -1,6 +1,6 @@
 from django.contrib import admin
 from config.admin_widgets import ClockAdminMixin
-from registrations.models import Registration 
+from registrations.models import Registration
 from .models import Activity, Location, Modality
 from django.template.loader import render_to_string
 
@@ -35,9 +35,12 @@ class RegistrationInline(ClockAdminMixin, admin.TabularInline):
 
     @admin.display(description="Aprovação e informações")
     def management(self, obj):
-        return render_to_string("registrations/controls.html", {
-            "registration": obj,
-        })
+        return render_to_string(
+            "registrations/controls.html",
+            {
+                "registration": obj,
+            },
+        )
 
 
 @admin.register(Modality)
@@ -82,7 +85,7 @@ class LocationAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Geolocalização (Mapa no Futuro)",
+            "Geolocalização",
             {
                 "fields": ("latitude", "longitude"),
                 "classes": ("collapse",),
@@ -107,7 +110,9 @@ class ActivityAdmin(ClockAdminMixin, admin.ModelAdmin):
         extra_context = dict(extra_context or {})
         activity = self.get_object(request, object_id)
         if activity and self.has_change_permission(request, activity):
-            extra_context["approval_registrations"] = activity.registrations.select_related("participant")
+            extra_context["approval_registrations"] = (
+                activity.registrations.select_related("participant")
+            )
         return super().change_view(request, object_id, form_url, extra_context)
 
     list_display = [
@@ -134,7 +139,7 @@ class ActivityAdmin(ClockAdminMixin, admin.ModelAdmin):
     date_hierarchy = "starts_at"
     inlines = [RegistrationInline]
     exclude = ["organizer"]
-    
+
     fieldsets = (
         (
             "Detalhes da Atividade",

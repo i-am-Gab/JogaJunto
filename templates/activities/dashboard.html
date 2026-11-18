@@ -17,7 +17,7 @@
         <div class="d-flex flex-wrap gap-2">
             <a href="{% url 'review_registrations' %}" class="btn btn-outline-primary">
                 Solicitações
-                {% if pending_total %}<span class="badge bg-warning text-dark ms-1">{{ pending_total }}</span>{% endif %}
+                {% if pending_total %}<span class="badge bg-warning text-dark ms-1">{{ pending_total }}</span>{% endif%}
             </a>
             <a href="{% url 'create_activity' %}" class="btn btn-primary fw-bold">
                 <i class="fa-solid fa-plus me-1"></i> Nova atividade
@@ -42,6 +42,43 @@
         {% endfor %}
     </section>
 
+    <section class="row g-4 mb-4" aria-label="Gráficos por modalidade">
+        <div class="col-md-{% if is_master %}6{% else %}12{% endif %}">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold mb-1">Minhas atividades por modalidade</h2>
+                    <p class="small text-secondary mb-3">Total criado por você: <strong>{{ my_total }}</strong></p>
+                    {% if my_total %}
+                    <div style="max-height: 260px; display: flex; justify-content: center;">
+                        <canvas id="myActivitiesChart"></canvas>
+                    </div>
+                    {% else %}
+                    <p class="text-secondary small text-center my-5">Crie uma atividade para visualizar a distribuição.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if is_master %}
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 border-start border-primary border-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 fw-bold text-primary mb-1">Total da plataforma (Visão Master)</h2>
+                    <p class="small text-secondary mb-3">Atividades registradas no sistema: <strong>{{ global_total}}</strong></p>
+                    {% if global_total %}
+                    <div style="max-height: 260px; display: flex; justify-content: center;">
+                        <canvas id="globalActivitiesChart"></canvas>
+                    </div>
+                    {% else %}
+                    <p class="text-secondary small text-center my-5">Nenhuma atividade cadastrada na plataforma.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+
     <section aria-labelledby="minhas-atividades-titulo">
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
             <h2 id="minhas-atividades-titulo" class="h4 fw-bold mb-0">Minhas atividades</h2>
@@ -55,7 +92,8 @@
                     <div>
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                             <h3 class="h5 fw-bold mb-0">{{ activity.title }}</h3>
-                            <span class="badge {% if activity.status == 'PUBLISHED' %}bg-success{% elif activity.status == 'DRAFT' %}bg-secondary{% elif activity.status == 'CANCELED' %}bg-danger{% else %}bg-dark{% endif %}">
+                            <span
+                                class="badge {% if activity.status == 'PUBLISHED' %}bg-success{% elif activity.status == 'DRAFT' %}bg-secondary{% elif activity.status == 'CANCELED' %}bg-danger{% else %}bg-dark{% endif %}">
                                 {{ activity.get_status_display }}
                             </span>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
@@ -70,7 +108,8 @@
                             {{ activity.location.name }} ({{ activity.location.city }})
                         </p>
                     </div>
-                    <a href="{% url 'review_registrations' %}?atividade={{ activity.pk }}" class="btn btn-outline-primary btn-sm align-self-start">
+                    <a href="{% url 'review_registrations' %}?atividade={{ activity.pk }}"
+                        class="btn btn-outline-primary btn-sm align-self-start">
                         Gerenciar inscrições
                     </a>
                 </div>
@@ -78,7 +117,8 @@
                 <div class="row g-2 text-center">
                     <div class="col-6 col-md-3">
                         <div class="bg-body-tertiary rounded-3 p-3 h-100">
-                            <div class="fw-bold fs-5">{{ activity.occupied_count }}/{{ activity.max_participants }}</div>
+                            <div class="fw-bold fs-5">{{ activity.occupied_count }}/{{ activity.max_participants }}
+                            </div>
                             <div class="small text-secondary">Vagas</div>
                         </div>
                     </div>
@@ -107,10 +147,58 @@
         <div class="card text-center p-5 border-0 shadow-sm">
             <i class="fa-solid fa-calendar-plus fs-1 text-secondary mb-3"></i>
             <h2 class="h5 fw-bold">Nenhuma atividade ainda</h2>
-            <p class="text-secondary mb-3">Crie sua primeira atividade para acompanhar vagas e solicitações por aqui.</p>
+            <p class="text-secondary mb-3">Crie sua primeira atividade para acompanhar vagas e solicitações por aqui.
+            </p>
             <a href="{% url 'create_activity' %}" class="btn btn-primary">Criar atividade</a>
         </div>
         {% endfor %}
     </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartColors = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6f42c1', '#fd7e14'];
+
+    const myCtx = document.getElementById('myActivitiesChart');
+    if (myCtx) {
+        new Chart(myCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ my_labels| safe }},
+    datasets: [{
+        data: {{ my_counts| safe }},
+        backgroundColor: chartColors,
+        borderWidth: 2
+                }]
+            },
+    options: {
+        responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+    }
+        });
+    }
+
+    {% if is_master %}
+    const globalCtx = document.getElementById('globalActivitiesChart');
+    if (globalCtx) {
+        new Chart(globalCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ global_labels| safe }},
+    datasets: [{
+        data: {{ global_counts| safe }},
+        backgroundColor: chartColors,
+        borderWidth: 2
+                }]
+            },
+    options: {
+        responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+    }
+        });
+    }
+    {% endif %}
+</script>
 {% endblock %}

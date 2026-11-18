@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,7 +13,6 @@ from registrations.waitlist import occupied_seats, offer_available_seats
 
 from .forms import ActivityForm
 from .models import Activity
-
 
 OCCUPIED_FILTER = Q(registrations__status__in=["PENDING", "APPROVED"]) | Q(
     registrations__status="WAITLIST",
@@ -64,7 +65,9 @@ def organizer_dashboard(request):
     occupied_total = occupied_seats(
         Registration.objects.filter(activity__organizer=request.user)
     ).count()
-    capacity_total = own_activities.aggregate(total=Sum("max_participants"))["total"] or 0
+    capacity_total = (
+        own_activities.aggregate(total=Sum("max_participants"))["total"] or 0
+    )
     activities_total = own_activities.count()
     published_total = own_activities.filter(status="PUBLISHED").count()
 
@@ -106,15 +109,42 @@ def organizer_dashboard(request):
         },
     ]
 
-    return render(
-        request,
-        "activities/dashboard.html",
-        {
-            "cards": cards,
-            "activities": activities,
-            "pending_total": pending_total,
-        },
+    # 1. Dados do gráfico para as atividades do próprio organizador
+    my_modality_data = list(
+        own_activities.values("modality__name")
+        .annotate(total=Count("pk"))
+        .order_by("-total")
     )
+
+    context = {
+        "cards": cards,
+        "activities": activities,
+        "pending_total": pending_total,
+        "my_total": activities_total,
+        "my_labels": json.dumps(
+            [row["modality__name"] or "Sem modalidade" for row in my_modality_data]
+        ),
+        "my_counts": json.dumps([row["total"] for row in my_modality_data]),
+    }
+
+    # 2. Se for Superuser (Master), adiciona a visão global de toda a plataforma
+    if request.user.is_superuser:
+        all_activities = Activity.objects.all()
+        global_modality_data = list(
+            all_activities.values("modality__name")
+            .annotate(total=Count("pk"))
+            .order_by("-total")
+        )
+        context["is_master"] = True
+        context["global_total"] = all_activities.count()
+        context["global_labels"] = json.dumps(
+            [row["modality__name"] or "Sem modalidade" for row in global_modality_data]
+        )
+        context["global_counts"] = json.dumps(
+            [row["total"] for row in global_modality_data]
+        )
+
+    return render(request, "activities/dashboard.html", context)
 
 
 def home(request):
@@ -125,7 +155,11 @@ def home(request):
         .annotate(
             active_registrations=Count(
                 "registrations",
-                filter=Q(registrations__status__in=["PENDING", "APPROVED"]) | Q(registrations__status="WAITLIST", registrations__seat_offered_at__isnull=False),
+                filter=Q(registrations__status__in=["PENDING", "APPROVED"])
+                | Q(
+                    registrations__status="WAITLIST",
+                    registrations__seat_offered_at__isnull=False,
+                ),
             )
         )
         .order_by("starts_at")
@@ -133,13 +167,21 @@ def home(request):
 
     registrations = {}
     if request.user.is_authenticated:
-        registrations = {row.activity_id: row for row in Registration.objects.filter(participant=request.user).select_related("activity")}
+        registrations = {
+            row.activity_id: row
+            for row in Registration.objects.filter(
+                participant=request.user
+            ).select_related("activity")
+        }
     for activity in activities:
         registration = registrations.get(activity.pk)
-        activity.user_registration_status = registration.status if registration else None
-        activity.user_seat_offered = registration.can_confirm_seat if registration else False
+        activity.user_registration_status = (
+            registration.status if registration else None
+        )
+        activity.user_seat_offered = (
+            registration.can_confirm_seat if registration else False
+        )
     return render(request, "home.html", {"activities": activities})
-
 
 
 @login_required
@@ -167,33 +209,58 @@ def subscribe_activity(request, activity_id):
     destination = "my_registrations" if request.POST.get("source") == "mine" else "home"
     try:
         with transaction.atomic():
-            activity = get_object_or_404(Activity.objects.select_for_update(), pk=activity_id)
+            activity = get_object_or_404(
+                Activity.objects.select_for_update(), pk=activity_id
+            )
             if activity.organizer == request.user:
                 messages.warning(request, "Você é o organizador desta atividade!")
                 return redirect(destination)
-            registration = Registration.objects.select_for_update().filter(activity=activity, participant=request.user).first()
+            registration = (
+                Registration.objects.select_for_update()
+                .filter(activity=activity, participant=request.user)
+                .first()
+            )
             if registration and registration.status != "CANCELED":
-                messages.warning(request, "Você já possui uma inscrição para esta atividade. Apenas inscrições canceladas podem ser refeitas.")
+                messages.warning(
+                    request,
+                    "Você já possui uma inscrição para esta atividade. Apenas inscrições canceladas podem ser refeitas.",
+                )
                 return redirect(destination)
             if not activity.accepts_registrations:
-                messages.warning(request, "Esta atividade não aceita inscrições: o prazo terminou, ela já começou ou não está publicada.")
+                messages.warning(
+                    request,
+                    "Esta atividade não aceita inscrições: o prazo terminou, ela já começou ou não está publicada.",
+                )
                 return redirect(destination)
             offer_available_seats(activity.pk)
             occupied = occupied_seats(activity.registrations).count()
-            initial_status = "APPROVED" if activity.registration_type == "AUTO" else "PENDING"
+            initial_status = (
+                "APPROVED" if activity.registration_type == "AUTO" else "PENDING"
+            )
             if occupied >= activity.max_participants:
                 initial_status = "WAITLIST"
             if registration:
                 registration.status = initial_status
                 registration.save(update_fields=["status"])
             else:
-                Registration.objects.create(activity=activity, participant=request.user, status=initial_status)
+                Registration.objects.create(
+                    activity=activity, participant=request.user, status=initial_status
+                )
         if initial_status == "WAITLIST":
-            messages.info(request, "A atividade está lotada. Você entrou na lista de espera e será avisado quando uma vaga estiver disponível.")
+            messages.info(
+                request,
+                "A atividade está lotada. Você entrou na lista de espera e será avisado quando uma vaga estiver disponível.",
+            )
         elif initial_status == "PENDING":
-            messages.info(request, f"Inscrição em {activity.title} pendente de aprovação do organizador.")
+            messages.info(
+                request,
+                f"Inscrição em {activity.title} pendente de aprovação do organizador.",
+            )
         else:
             messages.success(request, f"Inscrição confirmada em {activity.title}!")
     except IntegrityError:
-        messages.warning(request, "A inscrição já foi registrada. Atualize a página para acompanhar a situação.")
+        messages.warning(
+            request,
+            "A inscrição já foi registrada. Atualize a página para acompanhar a situação.",
+        )
     return redirect(destination)

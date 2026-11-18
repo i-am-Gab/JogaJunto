@@ -18,6 +18,8 @@ Organizadores cadastram atividades e gerenciam inscrições. Participantes consu
 - Django Admin com Jazzmin 3.0.5 e CSS personalizado.
 - python-dotenv para leitura de variáveis de ambiente.
 - Git e GitHub para versionamento.
+- Chart.js (via CDN) para visualização de gráficos estatísticos no dashboard.
+- Google Maps (embed e links diretos) para pré-visualização geográfica dos locais das atividades.
 
 ## Funcionalidades implementadas
 
@@ -27,15 +29,17 @@ Organizadores cadastram atividades e gerenciam inscrições. Participantes consu
 - Cadastro público não permite escolher privilégios de organizador ou administrador.
 - Participante: acessa suas inscrições e notificações nas telas do site; não acessa o Admin.
 - Organizador: cria atividades e gerencia suas atividades, inscrições, pagamentos e presenças no Admin; possui dashboard com indicadores e tela de análise de inscrições.
-- Superusuário: acesso administrativo geral, incluindo gerenciamento de usuários e perfis.
+- Superusuário: acesso administrativo geral, incluindo gerenciamento de usuários e perfis, além de visão consolidada da plataforma no dashboard.
 - Grupos e permissões sincronizados conforme o perfil do usuário.
 - O dashboard e a análise de solicitações ficam restritos a organizadores; participante recebe negação de acesso.
 
 ### Atividades
 
-- Listagem pública de atividades publicadas, com modalidade, local, horário, valor e disponibilidade.
+- Listagem pública de atividades publicadas, com modalidade, local, horário, valor, barra de progresso de ocupação e indicador de inscrição (imediata ou mediante aprovação).
+- Barra de busca instantânea (por título, local ou cidade) e filtros rápidos por modalidade na página inicial.
+- Mini-mapa interativo (Google Maps) nos cards de atividades, priorizando coordenadas geográficas (`latitude` e `longitude`) com fallback automático para endereço completo, além de atalho para abrir a rota no Google Maps.
 - Criação de atividades pela tela do organizador; nessa tela, a atividade é publicada diretamente.
-- Dashboard do organizador (`/organizador/`) com totais de atividades, pendências, confirmadas, lista de espera e vagas ocupadas, além da lista das atividades do próprio usuário.
+- Dashboard do organizador (`/organizador/`) com totais de atividades, pendências, confirmadas, lista de espera e vagas ocupadas, gráficos de pizza por modalidade (visão individual do organizador e visão global da plataforma para superusuários) e lista das atividades do próprio usuário.
 - Atalhos do dashboard para criar atividade e abrir a análise de solicitações, inclusive filtrada por atividade.
 - Cadastro, consulta, edição e exclusão de atividades pelo Admin, respeitando as permissões.
 - Modalidades e locais gerenciados pelo Admin. Organizadores podem cadastrar esses registros; sua edição e exclusão ficam restritas ao superusuário.
@@ -181,25 +185,22 @@ Os comandos abaixo usam PowerShell e Python 3.13, utilizado no ambiente local do
 git clone https://github.com/i-am-Gab/JogaJunto.git
 cd JogaJunto
 py -3.13 -m venv venv
-.\venv\Scripts\python.exe -m pip install "Django==6.1.2" "django-jazzmin==3.0.5" "python-dotenv==1.2.4"
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 .\venv\Scripts\python.exe manage.py check
 .\venv\Scripts\python.exe manage.py migrate
+.\venv\Scripts\python.exe manage.py sync_access
 .\venv\Scripts\python.exe manage.py createsuperuser
-.\venv\Scripts\python.exe manage.py runserver
-```
-
-O `requirements.txt` atual também contém pacotes de outras áreas, como análise de dados e processamento de áudio. A instalação acima usa as dependências diretas necessárias ao código Django atual. A lista completa inclui `numba==0.61.2`, cuja instalação falhou com Python 3.14; ela ainda precisa ser revisada para representar apenas o projeto.
 
 No Linux/macOS, crie o ambiente com `python3.13 -m venv venv` e substitua `.\venv\Scripts\python.exe` por `./venv/bin/python` nos comandos seguintes.
 
-- Site: http://127.0.0.1:8000/
-- Admin: http://127.0.0.1:8000/admin/
-- Login: http://127.0.0.1:8000/login/
-- Cadastro: http://127.0.0.1:8000/cadastro/
-- Minhas inscrições: http://127.0.0.1:8000/minhas-inscricoes/
-- Dashboard do organizador: http://127.0.0.1:8000/organizador/
-- Análise do organizador: http://127.0.0.1:8000/organizador/inscricoes/
-- Notificações: http://127.0.0.1:8000/notificacoes/
+- Site: <http://127.0.0.1:8000/>
+- Admin: <http://127.0.0.1:8000/admin/>
+- Login: <http://127.0.0.1:8000/login/>
+- Cadastro: <http://127.0.0.1:8000/cadastro/>
+- Minhas inscrições: <http://127.0.0.1:8000/minhas-inscricoes/>
+- Dashboard do organizador: <http://127.0.0.1:8000/organizador/>
+- Análise do organizador: <http://127.0.0.1:8000/organizador/inscricoes/>
+- Notificações: <http://127.0.0.1:8000/notificacoes/>
 
 Encerre o servidor com `Ctrl+C`. Nas execuções seguintes, basta entrar na pasta e executar `runserver` pelo Python do ambiente virtual. Não é necessário gerar novas migrations para instalar o projeto: as migrations existentes são aplicadas por `migrate`.
 
@@ -208,13 +209,12 @@ Encerre o servidor com `Ctrl+C`. Nas execuções seguintes, basta entrar na past
 O banco SQLite `db.sqlite3` é criado por `migrate`. Para cadastrar dados manualmente, siga os passos abaixo. Para carregar exemplos prontos, use o comando `seed_demo` descrito a seguir.
 
 1. Entre no Admin com o superusuário criado.
-2. Cadastre modalidades e locais.
-3. Crie usuários ou utilize o cadastro público. Para conceder acesso de organizador, edite o perfil do usuário pelo Admin com o superusuário.
+2. Cadastre modalidades e locais (opcionalmente informando latitude e longitude para posicionamento exato no mapa).3. Crie usuários ou utilize o cadastro público. Para conceder acesso de organizador, edite o perfil do usuário pelo Admin com o superusuário.
 4. Cadastre atividades e use uma conta de participante para testar inscrições.
 
 A aplicação lê `SECRET_KEY` das variáveis de ambiente ou de um arquivo `.env` na pasta do projeto. Sem essa configuração, usa uma chave padrão de desenvolvimento. `DEBUG=True` e SQLite estão configurados para execução local. O fuso horário é `America/Sao_Paulo`.
 
-Bootstrap e outros recursos visuais utilizam CDN; mantenha conexão com a internet durante a demonstração para carregar esses recursos.
+Bootstrap, Chart.js e Google Maps utilizam recursos externos; mantenha conexão com a internet durante a demonstração para carregá-los corretamente.
 
 ### Dados de demonstração (`seed_demo`)
 
@@ -224,13 +224,15 @@ Depois de aplicar as migrations, execute na pasta do projeto:
 python manage.py seed_demo
 ```
 
-O comando cria **7 usuários, 4 modalidades, 3 locais fictícios, 7 atividades e 13 inscrições**, além de notificações. Modalidades, locais e atividades usam o prefixo `[DEMO]`.
+O comando cria **9 usuários, 6 modalidades, 9 locais com coordenadas geográficas reais (em Lavras, Nepomuceno, Varginha, Perdões e Belo Horizonte), 14 atividades e inscrições variadas**, além de notificações. Modalidades, locais e atividades usam o prefixo `[DEMO]`.
 
 | Conta | Perfil |
 | --- | --- |
-| `demo_admin` | Superusuário |
+| `demo_admin` | Superusuário (acesso Admin e visão global no dashboard) |
 | `demo_organizador` | Organizador Rafael |
 | `demo_organizador2` | Organizadora Mariana |
+| `demo_organizador3` | Organizador Lucas |
+| `demo_organizador4` | Organizadora Camila |
 | `demo_ana`, `demo_bruno`, `demo_carla`, `demo_diego` | Participantes |
 
 A senha inicial das contas novas é **`JogaJuntoDemo!2026`**. Entre com o nome de usuário. Você pode escolher outra senha na primeira carga:
@@ -239,7 +241,7 @@ A senha inicial das contas novas é **`JogaJuntoDemo!2026`**. Entre com o nome d
 python manage.py seed_demo --password "SuaSenhaDeDemonstracao!2026"
 ```
 
-Os exemplos incluem inscrição pendente, aprovada, rejeitada, cancelada e em lista de espera; uma atividade lotada com fila; uma vaga reservada aguardando confirmação; atividades com inscrição automática e por aprovação; rascunho e atividades cancelada e finalizada. Entre com `demo_organizador` para ver o dashboard e as solicitações. Entre com `demo_diego` para testar a confirmação da vaga reservada. Com `demo_ana`, cancele a inscrição no futebol para testar o aviso ao primeiro da fila (`demo_bruno`).
+Os exemplos incluem atividades gratuitas e pagas, inscrição pendente, aprovada, rejeitada, cancelada e em lista de espera, atividade lotada com fila, vaga reservada aguardando confirmação, inscrição automática e por aprovação, além de atividade em rascunho. Entre com qualquer um dos 4 organizadores (`demo_organizador` a `demo_organizador4`) para visualizar seus respectivos gráficos e solicitações, ou com `demo_admin` para visualizar o gráfico agregado de toda a plataforma. Entre com `demo_diego` para testar a confirmação de vaga reservada, ou use `demo_ana` para cancelar a inscrição no futebol e liberar vaga para `demo_carla`..
 
 As atividades abertas são criadas com datas futuras em relação à primeira execução, no fuso do projeto. A atividade finalizada usa datas passadas.
 
@@ -262,8 +264,8 @@ Existem testes de cadastro, permissões, atividades, dashboard do organizador, i
 
 ## Versionamento e checkpoints
 
-Repositório: https://github.com/i-am-Gab/JogaJunto
+Repositório: <https://github.com/i-am-Gab/JogaJunto>
 
 As referências Git locais incluem `main`, `origin/develop` e `origin/feature`. A visibilidade pública, os colaboradores e a entrega do link no Campus Virtual devem ser conferidos no GitHub e no ambiente da disciplina.
 
-Para o Checkpoint 1, o projeto possui models e migrations, diagrama relacional, Admin com Jazzmin, filtros, buscas, grupos de acesso e separação em três apps. Para a etapa final, já há autenticação, cadastro, áreas por perfil, dashboard do organizador, inscrições, lista de espera, notificações, interface Bootstrap e temas claro/escuro. Essa descrição registra a implementação existente; a validação completa dos fluxos e da responsividade deve ser feita antes da entrega.
+Para o Checkpoint 1, o projeto possui models e migrations, diagrama relacional, Admin com Jazzmin, filtros, buscas, grupos de acesso e separação em três apps. Para a etapa final, já há autenticação, cadastro, áreas por perfil, dashboard do organizador com gráficos por modalidade, pré-visualização com Google Maps, filtros dinâmicos na página inicial, inscrições, lista de espera, notificações, interface Bootstrap e temas claro/escuro.
