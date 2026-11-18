@@ -4,6 +4,8 @@ Aplicação web para criação, divulgação e gerenciamento de atividades físi
 
 Organizadores cadastram atividades e gerenciam inscrições. Participantes consultam atividades publicadas, solicitam participação e acompanham inscrições e notificações.
 
+[Contas de teste: usuários, perfis e cenários](docs/usuarios_teste.md).
+
 ## Integrantes
 
 - Gabriel Aguiar Alves e Silva
