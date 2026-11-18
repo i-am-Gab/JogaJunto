@@ -8,13 +8,13 @@ from django.utils import timezone
 
 from accounts.models import User
 from activities.models import Activity, Location, Modality
-from registrations.models import Registration, Notification
+from registrations.models import Attendance, Payment, Registration, Notification
 from registrations.waitlist import occupied_seats
 from .management.commands.seed_demo import DEMO_PASSWORD
 
 
 class SeedDemoTests(TestCase):
-    models = (User, Group, Permission, Modality, Location, Activity, Registration, Notification,
+    models = (User, Group, Permission, Modality, Location, Activity, Registration, Notification, Payment, Attendance,
               User.groups.through, User.user_permissions.through, Group.permissions.through)
 
     def seed(self, **options):
@@ -31,11 +31,11 @@ class SeedDemoTests(TestCase):
 
     def test_creates_usable_users_and_all_scenarios(self):
         self.seed()
-        self.assertEqual(User.objects.count(), 7)
-        self.assertEqual(Modality.objects.count(), 4)
-        self.assertEqual(Location.objects.count(), 3)
-        self.assertEqual(Activity.objects.count(), 7)
-        self.assertEqual(Registration.objects.count(), 13)
+        self.assertEqual(User.objects.count(), 9)
+        self.assertEqual(Modality.objects.count(), 6)
+        self.assertEqual(Location.objects.count(), 9)
+        self.assertEqual(Activity.objects.count(), 16)
+        self.assertEqual(Registration.objects.count(), 29)
         self.assertSetEqual(set(Registration.objects.values_list("status", flat=True)), set(dict(Registration.STATUS_CHOICES)))
         self.assertSetEqual(set(Activity.objects.values_list("status", flat=True)), set(dict(Activity.STATUS_CHOICES)))
         for user in User.objects.all():
@@ -95,3 +95,53 @@ class SeedDemoTests(TestCase):
         with self.assertRaisesMessage(CommandError, "Nenhum dado foi alterado"):
             self.seed()
         self.assertEqual(self.snapshot(), snapshot)
+
+
+    def test_payment_and_attendance_demo_can_be_managed_by_owner(self):
+        self.seed()
+        self.assertEqual(Payment.objects.count(), 2)
+        self.assertEqual(Attendance.objects.count(), 2)
+        registration = Registration.objects.get(activity__title="[DEMO] Futebol concluído", participant__username="demo_ana")
+        self.assertEqual(registration.payment.status, "PAID")
+        self.assertTrue(registration.attendance.attended)
+        self.assertIsNotNone(registration.attendance.check_in_at)
+        self.client.force_login(User.objects.get(username="demo_organizador"))
+        from django.urls import reverse
+        for obj in (registration.payment, registration.attendance):
+            response = self.client.get(reverse(f"admin:registrations_{obj._meta.model_name}_change", args=[obj.pk]))
+            self.assertEqual(response.status_code, 200)
+        self.client.force_login(User.objects.get(username="demo_organizador2"))
+        self.assertRedirects(self.client.get(reverse("admin:registrations_payment_change", args=[registration.payment.pk])), reverse("admin:index"))
+
+    def test_custom_password_output_and_expired_dates_warning(self):
+        output = self.seed(password="SenhaDemo!987")
+        self.assertIn("Senhas existentes são preservadas", output)
+        self.assertTrue(User.objects.get(username="demo_ana").check_password("SenhaDemo!987"))
+        activity = Activity.objects.get(title="[DEMO] Corrida com aprovação")
+        Activity.objects.filter(pk=activity.pk).update(confirmation_deadline=timezone.now() - timedelta(hours=1))
+        self.assertIn("prazo encerrado", self.seed())
+
+
+    def test_owner_can_save_payment_and_attendance_from_admin_forms(self):
+        self.seed()
+        from django.urls import reverse
+        self.client.force_login(User.objects.get(username="demo_organizador"))
+        registration = Registration.objects.get(activity__title="[DEMO] Futebol concluído", participant__username="demo_bruno")
+        payment = registration.payment
+        response = self.client.post(reverse("admin:registrations_payment_change", args=[payment.pk]), {
+            "registration": registration.pk, "amount": "15.00", "status": "PAID", "method": "PIX",
+            "paid_at_0": "2026-11-18", "paid_at_1": "12:00:00", "_save": "Salvar",
+        })
+        self.assertEqual(response.status_code, 302)
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, "PAID")
+        self.assertIsNotNone(payment.paid_at)
+        attendance = registration.attendance
+        response = self.client.post(reverse("admin:registrations_attendance_change", args=[attendance.pk]), {
+            "registration": registration.pk, "attended": "on", "check_in_at_0": "2026-11-18",
+            "check_in_at_1": "12:00:00", "notes": "Compareceu na demo", "_save": "Salvar",
+        })
+        self.assertEqual(response.status_code, 302)
+        attendance.refresh_from_db()
+        self.assertTrue(attendance.attended)
+        self.assertIsNotNone(attendance.check_in_at)

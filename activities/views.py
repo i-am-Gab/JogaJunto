@@ -184,6 +184,29 @@ def home(request):
     return render(request, "home.html", {"activities": activities})
 
 
+def activity_detail(request, activity_id):
+    activities = Activity.objects.select_related("modality", "location", "organizer")
+    if not request.user.is_authenticated:
+        activities = activities.filter(status="PUBLISHED")
+    elif not request.user.is_superuser:
+        activities = activities.filter(
+            Q(status="PUBLISHED") | Q(organizer=request.user)
+            | (Q(registrations__participant=request.user) & ~Q(status="DRAFT"))
+        ).distinct()
+    activity = get_object_or_404(activities, pk=activity_id)
+    registration = None
+    if request.user.is_authenticated:
+        registration = activity.registrations.filter(participant=request.user).first()
+    occupied = occupied_seats(activity.registrations).count()
+    return render(request, "activities/detail.html", {
+        "activity": activity,
+        "registration": registration,
+        "occupied": occupied,
+        "available": max(0, activity.max_participants - occupied),
+        "is_owner": request.user == activity.organizer,
+    })
+
+
 @login_required
 def create_activity(request):
     if not request.user.has_organizer_group():
@@ -207,6 +230,9 @@ def create_activity(request):
 @require_POST
 def subscribe_activity(request, activity_id):
     destination = "my_registrations" if request.POST.get("source") == "mine" else "home"
+    if request.POST.get("source") == "detail":
+        from django.urls import reverse
+        destination = reverse("activity_detail", args=[activity_id])
     try:
         with transaction.atomic():
             activity = get_object_or_404(

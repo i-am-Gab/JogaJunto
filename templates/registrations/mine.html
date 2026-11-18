@@ -13,7 +13,7 @@
     <article class="card shadow-sm mb-4" id="inscricao-{{ registration.pk }}">
         <div class="card-body p-4">
             <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-3">
-                <div><span class="small text-secondary">{{ registration.activity.modality }}</span><h2 class="h4 fw-bold mt-1 mb-0">{{ registration.activity.title }}</h2></div>
+                <div><span class="small text-secondary">{{ registration.activity.modality }}</span><h2 class="h4 fw-bold mt-1 mb-0"><a class="text-reset" href="{% url 'activity_detail' registration.activity_id %}">{{ registration.activity.title }}</a></h2></div>
                 <span class="badge {% if registration.status == 'PENDING' %}bg-warning text-dark{% elif registration.status == 'APPROVED' %}bg-success{% elif registration.status == 'REJECTED' %}bg-danger{% elif registration.status == 'WAITLIST' %}bg-info text-dark{% else %}bg-secondary{% endif %}">{% if registration.status == 'PENDING' %}Pendente de aprovação{% elif registration.status == 'APPROVED' %}Inscrição confirmada{% else %}{{ registration.get_status_display }}{% endif %}</span>
             </div>
             <div class="bg-body-tertiary border rounded-3 p-3 mb-3">

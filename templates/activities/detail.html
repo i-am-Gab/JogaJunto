@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ activity.title }} — JogaJunto{% endblock %}
+{% block content %}
+<nav aria-label="Navegação" class="mb-4"><a href="{% url 'home' %}">← Voltar às atividades</a></nav>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <header class="mb-4">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="badge bg-primary">{{ activity.modality.name }}</span>
+                <span class="badge bg-secondary">{{ activity.get_status_display }}</span>
+            </div>
+            <h1 class="fw-bold">{{ activity.title }}</h1>
+            <p class="text-body-secondary">Organizada por {{ activity.organizer.get_full_name|default:activity.organizer.username }}</p>
+        </header>
+        <section class="card bg-body-tertiary mb-4" aria-labelledby="about-heading">
+            <div class="card-body p-4"><h2 id="about-heading" class="h4">Sobre a atividade</h2>{{ activity.description|linebreaks }}</div>
+        </section>
+        <section class="card bg-body-tertiary mb-4" aria-labelledby="location-heading">
+            <div class="card-body p-4">
+                <h2 id="location-heading" class="h4">Local e ponto de encontro</h2>
+                <p class="fw-semibold mb-1">{{ activity.location.name }}</p>
+                <p>{{ activity.location.street }}{% if activity.location.number %}, {{ activity.location.number }}{% endif %}<br>
+                    {{ activity.location.neighborhood }} — {{ activity.location.city }}/{{ activity.location.state }}<br>CEP {{ activity.location.zip_code }}</p>
+                {% if activity.location.complement %}<p>Complemento: {{ activity.location.complement }}</p>{% endif %}
+                {% if activity.location.reference_point %}<p>Ponto de referência: {{ activity.location.reference_point }}</p>{% endif %}
+                <iframe class="w-100 rounded border mb-3" height="280" title="Mapa de {{ activity.location.name }}" loading="lazy" src="https://maps.google.com/maps?q={{ activity.location.maps_query }}&amp;z=15&amp;output=embed"></iframe>
+                <a class="btn btn-outline-primary" href="https://www.google.com/maps/search/?api=1&amp;query={{ activity.location.maps_query }}" target="_blank" rel="noopener noreferrer">Abrir no Google Maps</a>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-4">
+        <section class="card shadow-sm bg-body-tertiary" aria-labelledby="join-heading">
+            <div class="card-body p-4">
+                <h2 id="join-heading" class="h4">Sua participação</h2>
+                <p class="h3 text-success my-3">{% if activity.price == 0 %}Grátis{% else %}R$ {{ activity.price }}{% endif %}</p>
+                <dl>
+                    <dt>Início</dt><dd>{{ activity.starts_at|date:'d/m/Y H:i' }}</dd>
+                    <dt>Término</dt><dd>{{ activity.ends_at|date:'d/m/Y H:i' }}</dd>
+                    <dt>Prazo para inscrição e confirmação</dt><dd>{{ activity.confirmation_deadline|date:'d/m/Y H:i' }}</dd>
+                    <dt>Vagas</dt><dd>{{ available }} disponíveis · {{ occupied }} de {{ activity.max_participants }} ocupadas</dd>
+                    <dt>Inscrição</dt><dd>{{ activity.get_registration_type_display }}</dd>
+                </dl>
+                <p class="small text-body-secondary">Solicitações pendentes e vagas reservadas também entram na ocupação.</p>
+                {% if is_owner %}
+                    <a class="btn btn-primary w-100" href="{% url 'review_registrations' %}?atividade={{ activity.pk }}">Gerenciar inscrições</a>
+                    <a class="btn btn-outline-secondary w-100 mt-2" href="{% url 'admin:activities_activity_change' activity.pk %}">Editar no Admin</a>
+                {% elif registration and registration.status != 'CANCELED' %}
+                    <p class="alert alert-info" role="status">Sua inscrição: {{ registration.get_status_display }}</p>
+                    {% if registration.can_confirm_seat %}
+                    <form action="{% url 'confirm_waitlist_seat' registration.pk %}" method="post">{% csrf_token %}<button class="btn btn-success w-100">Confirmar vaga reservada</button></form>
+                    {% endif %}
+                    <a href="{% url 'my_registrations' %}" class="btn btn-outline-primary w-100 mt-2">Acompanhar minhas inscrições</a>
+                {% elif not activity.accepts_registrations %}
+                    <p class="alert alert-secondary mb-0" role="status">Inscrições encerradas</p>
+                {% elif not user.is_authenticated %}
+                    <a class="btn btn-primary w-100" href="{% url 'login' %}?next={{ request.path|urlencode }}">Entrar para participar</a>
+                {% else %}
+                    {% if registration %}<p class="small">Sua inscrição anterior foi cancelada. Você pode solicitar novamente.</p>{% endif %}
+                    {% if activity.registration_type == 'MANUAL' %}<p class="small">Sua solicitação será analisada pelo organizador.</p>{% endif %}
+                    <form action="{% url 'subscribe_activity' activity.pk %}" method="post">
+                        {% csrf_token %}<input type="hidden" name="source" value="detail">
+                        <button class="btn btn-primary w-100">{% if available == 0 %}Entrar na lista de espera{% elif registration %}Inscrever-se novamente{% elif activity.registration_type == 'MANUAL' %}Solicitar inscrição{% else %}Confirmar inscrição{% endif %}</button>
+                    </form>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

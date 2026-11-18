@@ -19,6 +19,7 @@
             <button class="btn btn-outline-primary">Filtrar</button>
         </div>
     </form>
+    <p class="small text-secondary">Aumentou o limite de participantes? As vagas são reservadas por ordem da fila. Abra <strong>Lista de espera</strong> para aprovar as inscrições com vaga liberada.</p>
     <nav class="d-flex gap-2 flex-wrap mb-4" aria-label="Situação das inscrições">
         {% for tab in tabs %}<a href="?situacao={{ tab.value }}&amp;atividade={{ activity_id }}" class="btn {% if selected == tab.value %}btn-primary{% else %}btn-outline-secondary{% endif %}" {% if selected == tab.value %}aria-current="page"{% endif %}>{{ tab.label }} <span class="badge {% if selected == tab.value %}bg-light text-primary{% else %}bg-secondary{% endif %} ms-1">{{ tab.count }}</span></a>{% endfor %}
     </nav>
@@ -37,7 +38,7 @@
             <form id="registration-action-{{ registration.pk }}" method="post" action="{% url 'decide_registration' registration.pk %}">{% csrf_token %}</form>
         </div>
     </article>
-    {% empty %}<div class="card text-center p-5"><h2 class="h5">{% if selected == 'PENDING' %}Tudo em dia!{% else %}Nenhuma inscrição nesta seleção{% endif %}</h2><p class="text-secondary mb-0">{% if selected == 'PENDING' %}Não há solicitações aguardando sua aprovação.{% else %}Escolha outra situação ou atividade para consultar.{% endif %}</p></div>{% endfor %}
+    {% empty %}<div class="card text-center p-5"><h2 class="h5">{% if selected == 'PENDING' %}Tudo em dia!{% else %}Nenhuma inscrição nesta seleção{% endif %}</h2><p class="text-secondary mb-0">{% if selected == 'PENDING' %}Não há solicitações pendentes. Confira também a aba Lista de espera para ver vagas liberadas.{% else %}Escolha outra situação ou atividade para consultar.{% endif %}</p></div>{% endfor %}
     {% if page_obj.has_other_pages %}<nav class="d-flex justify-content-between gap-3 mt-4" aria-label="Páginas de solicitações">
         {% if page_obj.has_previous %}<a href="?situacao={{ selected }}&amp;atividade={{ activity_id }}&amp;page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
         <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>

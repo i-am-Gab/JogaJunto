@@ -1,6 +1,9 @@
 <div class="registration-controls">
-    {% if registration.status == 'PENDING' %}
+    {% if registration.status == 'PENDING' or registration.can_confirm_seat %}
     <button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="APPROVED" class="btn btn-success">Aprovar inscrição</button>
+    {% endif %}
+    {% if registration.status == 'WAITLIST' %}
+    <p class="registration-hint mt-2" role="status">{% if registration.can_confirm_seat %}Vaga reservada por ordem da fila. Você pode aprovar a inscrição; o participante também pode confirmar a vaga na sua área.{% else %}Aguardando liberação de vaga por ordem da fila e dentro do prazo de confirmação.{% endif %}</p>
     {% endif %}
     <details class="registration-details">
         <summary>Ver informações</summary>
@@ -16,7 +19,7 @@
             <p class="registration-hint">Notas internas, visíveis apenas ao organizador e aos administradores.</p>
             <div class="registration-secondary-actions">
                 <button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="SAVE_NOTES" class="btn btn-outline-primary">Salvar notas</button>
-                {% if registration.status == 'PENDING' %}<button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="REJECTED" class="btn btn-outline-danger">Rejeitar inscrição</button>{% endif %}
+                {% if registration.status == 'PENDING' or registration.can_confirm_seat %}<button type="submit" form="registration-action-{{ registration.pk }}" name="decision" value="REJECTED" class="btn btn-outline-danger">Rejeitar inscrição</button>{% endif %}
             </div>
         </div>
     </details>

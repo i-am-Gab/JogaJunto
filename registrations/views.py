@@ -115,7 +115,7 @@ def review_registrations(request):
     if selected not in {"ALL", *dict(Registration.STATUS_CHOICES)}:
         selected = "PENDING"
     counts = dict(queryset.values("status").annotate(total=Count("pk")).values_list("status", "total"))
-    tabs = [("PENDING", "Pendentes"), ("APPROVED", "Aprovadas"), ("REJECTED", "Rejeitadas"), ("ALL", "Todas")]
+    tabs = [("PENDING", "Pendentes"), ("WAITLIST", "Lista de espera"), ("APPROVED", "Aprovadas"), ("REJECTED", "Rejeitadas"), ("ALL", "Todas")]
     tabs = [{"value": value, "label": label, "count": sum(counts.values()) if value == "ALL" else counts.get(value, 0)} for value, label in tabs]
     if selected != "ALL":
         queryset = queryset.filter(status=selected)
@@ -137,16 +137,20 @@ def decide_registration(request, registration_id):
     with transaction.atomic():
         activity = Activity.objects.select_for_update().get(pk=registration.activity_id)
         registration = queryset.select_for_update().get(pk=registration.pk)
+        registration.activity = activity
         if decision == "SAVE_NOTES":
             registration.organizer_notes = request.POST.get("organizer_notes", "").strip()
             registration.save(update_fields=["organizer_notes"])
             messages.success(request, "Notas do organizador salvas.")
-        elif registration.status != "PENDING":
-            messages.warning(request, "Esta solicitação já foi analisada. Atualize a lista para ver a situação atual.")
+        elif registration.status != "PENDING" and not registration.can_confirm_seat:
+            if registration.status == "WAITLIST":
+                messages.warning(request, "Esta inscrição ainda não tem uma vaga reservada disponível. Aguarde a liberação por ordem da fila e dentro do prazo.")
+            else:
+                messages.warning(request, "Esta solicitação já foi analisada. Atualize a lista para ver a situação atual.")
         elif activity.status != "PUBLISHED":
             messages.warning(request, "Esta atividade não está publicada e não aceita decisões de inscrição.")
-        elif decision == "APPROVED" and activity.registrations.filter(status="APPROVED").count() >= activity.max_participants:
-            messages.error(request, "Não há vagas disponíveis. A solicitação permanece pendente.")
+        elif decision == "APPROVED" and occupied_seats(activity.registrations.exclude(pk=registration.pk)).count() >= activity.max_participants:
+            messages.error(request, "Não há vagas disponíveis. A inscrição permanece na situação atual.")
         else:
             registration.status = decision
             if "organizer_notes" in request.POST:

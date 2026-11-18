@@ -11,7 +11,7 @@ from django.utils import timezone
 from accounts.models import User, ROLE_ORGANIZER, ROLE_PARTICIPANT
 from accounts.permissions import ORGANIZER_PERMISSIONS
 from activities.models import Activity, Location, Modality
-from registrations.models import Notification, Registration
+from registrations.models import Attendance, Notification, Payment, Registration
 
 DEMO_PASSWORD = "JogaJuntoDemo!2026"
 DEMO_USERS = (
@@ -415,6 +415,12 @@ class Command(BaseCommand):
             ),
         )
 
+        scenarios += (
+            ("Futebol concluído", "Futebol", 0, "demo_organizador", "AUTO", "FINISHED", 10, Decimal("15.00"),
+             (("ana", "APPROVED", False), ("bruno", "APPROVED", False))),
+            ("Treino cancelado", "Corrida", 1, "demo_organizador", "AUTO", "CANCELED", 10, Decimal("0.00"), ()),
+        )
+
         for index, (
             title,
             modality,
@@ -429,6 +435,8 @@ class Command(BaseCommand):
             starts_at = timezone.localtime(self.now).replace(
                 hour=8, minute=0, second=0, microsecond=0
             ) + timedelta(days=3 + index)
+            if status == "FINISHED":
+                starts_at = starts_at - timedelta(days=30 + index)
             activity, created = self.create_if_missing(
                 Activity,
                 {
@@ -462,6 +470,25 @@ class Command(BaseCommand):
                     order,
                 )
 
+        # Add only missing demonstration controls, preserving previous edits.
+        finished = Activity.objects.get(title="[DEMO] Futebol concluído", organizer=users["demo_organizador"])
+        for username, paid, attended in (("demo_ana", True, True), ("demo_bruno", False, False)):
+            registration = Registration.objects.filter(activity=finished, participant=users[username], status="APPROVED").first()
+            if registration is None:
+                continue
+            self.create_if_missing(Payment, {"registration": registration}, {
+                "amount": finished.price, "status": "PAID" if paid else "PENDING",
+                "method": "PIX", "paid_at": finished.starts_at if paid else None,
+            }, "pagamentos")
+            self.create_if_missing(Attendance, {"registration": registration}, {
+                "attended": attended, "check_in_at": finished.starts_at if attended else None,
+                "notes": "Exemplo de presença para a apresentação do C2.",
+            }, "presenças")
+
+        expired = Activity.objects.filter(title__startswith="[DEMO]", status="PUBLISHED", confirmation_deadline__lte=self.now).count()
+        if expired:
+            self.stdout.write(self.style.WARNING(f"Atenção: {expired} atividade(s) demo com prazo encerrado. Datas existentes foram preservadas; ajuste-as pelo Admin antes da apresentação."))
+
         for category in (
             "usuários",
             "modalidades",
@@ -469,13 +496,15 @@ class Command(BaseCommand):
             "atividades",
             "inscrições",
             "notificações",
+            "pagamentos",
+            "presenças",
         ):
             self.stdout.write(
                 f"{category}: {self.created[category]} criado(s); {self.preserved[category]} preservado(s)."
             )
         self.stdout.write(
             self.style.SUCCESS(
-                "Demonstração pronta! Senha padrão das contas demo: JogaJuntoDemo!2026"
+                "Demonstração pronta! Contas novas usam a senha informada em --password (padrão: JogaJuntoDemo!2026). Senhas existentes são preservadas."
             )
         )
         self.stdout.write("Contas: " + ", ".join(user[0] for user in DEMO_USERS))

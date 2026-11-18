@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from activities.views import home, subscribe_activity, create_activity, organizer_dashboard
+from activities.views import home, subscribe_activity, create_activity, organizer_dashboard, activity_detail
 from accounts.views import signup
 from registrations import views as registration_views
 from accounts.forms import LoginForm
@@ -28,6 +28,7 @@ urlpatterns = [
     
     # Rotas da Aplicação
     path("", home, name="home"),
+    path("atividade/<int:activity_id>/", activity_detail, name="activity_detail"),
     path("atividade/nova/", create_activity, name="create_activity"),
     path("atividade/<int:activity_id>/inscrever/", subscribe_activity, name="subscribe_activity"),
 ]

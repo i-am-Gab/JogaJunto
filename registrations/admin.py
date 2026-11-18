@@ -88,6 +88,11 @@ class PaymentAdmin(OrganizerScopedAdminMixin, admin.ModelAdmin):
         "registration__participant",
     ]
     date_hierarchy = "created_at"
+    autocomplete_fields = ["registration"]
+    fieldsets = (("Registro de pagamento", {
+        "description": "Selecione a inscrição e registre o controle manual. Use PAID para pago ou PENDING para pendente; por exemplo, método PIX. Informe a data apenas quando o pagamento ocorrer. Não realiza cobrança bancária.",
+        "fields": ("registration", "amount", "status", "method", "paid_at"),
+    }),)
 
 
 @admin.register(Attendance)
@@ -96,6 +101,11 @@ class AttendanceAdmin(OrganizerScopedAdminMixin, admin.ModelAdmin):
     participant_lookup = "registration__participant"
     list_display = ["registration", "attended", "check_in_at"]
     list_filter = ["attended"]
+    autocomplete_fields = ["registration"]
+    fieldsets = (("Controle de presença", {
+        "description": "Selecione a inscrição, marque Presente e informe o horário de entrada quando o participante comparecer. Use as observações para registrar detalhes da participação.",
+        "fields": ("registration", "attended", "check_in_at", "notes"),
+    }),)
     search_fields = [
         "registration__participant__username",
         "registration__activity__title",

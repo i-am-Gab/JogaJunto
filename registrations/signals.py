@@ -1,5 +1,6 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
+from activities.models import Activity
 from .models import Notification, Registration
 
 
@@ -39,3 +40,23 @@ def notify_registration(sender, instance, created, raw=False, update_fields=None
     if instance.status in ("CANCELED", "REJECTED"):
         from .waitlist import offer_available_seats
         offer_available_seats(instance.activity_id)
+
+
+@receiver(pre_save, sender=Activity)
+def remember_capacity(sender, instance, raw=False, update_fields=None, **kwargs):
+    if raw or (update_fields is not None and "max_participants" not in update_fields):
+        return
+    instance._previous_capacity = (
+        sender.objects.filter(pk=instance.pk).values_list("max_participants", flat=True).first()
+        if instance.pk else None
+    )
+
+
+@receiver(post_save, sender=Activity)
+def offer_seats_after_capacity_increase(sender, instance, created, raw=False, update_fields=None, **kwargs):
+    if raw or created or (update_fields is not None and "max_participants" not in update_fields):
+        return
+    previous = getattr(instance, "_previous_capacity", None)
+    if previous is not None and instance.max_participants > previous:
+        from .waitlist import offer_available_seats
+        offer_available_seats(instance.pk)
